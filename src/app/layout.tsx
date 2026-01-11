@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceMono.variable} ${inter.variable} ${bricolage.variable} ${poppins.variable} font-inter antialiased overflow-x-hidden`}
+        className={`${spaceMono.variable} ${inter.variable} ${bricolage.variable} ${poppins.variable} font-poppins antialiased overflow-x-hidden`}
       >
         <Preloader />
         <Navbar/>

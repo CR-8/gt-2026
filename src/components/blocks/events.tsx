@@ -58,7 +58,7 @@ function Grid() {
                 <span className='text-white flex items-center justify-center'>What to expect</span>
             </div>
 
-            <div className="mx-8 lg:mx-16 my-12 max-w-4xl text-6xl lg:text-7xl font-inter font-bold leading-tight">
+            <div className="mx-8 lg:mx-16 my-12 max-w-4xl text-6xl lg:text-7xl font-bold leading-tight">
                 <span className="text-white">
                     What to expect at
                     <br />

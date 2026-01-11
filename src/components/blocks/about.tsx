@@ -22,12 +22,12 @@ function About() {
     const animation = gsap.from(type.chars, {
       scrollTrigger: {
         trigger: containerRef.current,
-        start: "top 85%",
-        end: "top 20%",
+        start: "top 65%",
+        end: "top 10%",
         scrub: true,
       },
       opacity: 0.15,
-      stagger: 0.025,
+      stagger: 0.15,
       color: "var(--color-text-tertiary)",
       ease: "none",
     });
@@ -43,9 +43,9 @@ function About() {
     <section className="relative w-full min-h-screen bg-background py-16 sm:py-20 lg:py-28">
       <div
         ref={containerRef}
-        className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16"
+        className="mx-auto max-w-7xl px-4 sm:px-4 lg:px-6"
       >
-        <div className="flex items-center">
+        <div className="flex items-start justify-start">
           <div className="max-w-5xl">
             <p
               ref={textRef}

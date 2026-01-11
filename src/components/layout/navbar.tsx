@@ -90,9 +90,9 @@ const Navbar = () => {
           <div className="nav-label h-[20px] overflow-hidden hidden md:block">
             <p className="text-xs sm:text-sm uppercase tracking-tighter font-space-mono">Menu</p>
           </div>
-          <div className="hamburger w-9 h-9 sm:w-10 sm:h-10 flex flex-col items-center justify-center gap-1 border border-[var(--color-primary-cyan)]/30 rounded-full relative hover:border-[var(--color-primary-cyan)]/60 hover:shadow-[0_0_20px_rgba(0,217,255,0.3)] transition-all duration-300">
-            <span className={`w-4 sm:w-5 h-[1px] bg-[var(--color-primary-cyan)] transition-all duration-500 ${isOpen ? 'rotate-45 translate-y-[2px]' : ''}`}></span>
-            <span className={`w-4 sm:w-5 h-[1px] bg-[var(--color-primary-cyan)] transition-all duration-500 ${isOpen ? '-rotate-45 -translate-y-[2px]' : ''}`}></span>
+          <div className="hamburger w-9 h-9 sm:w-10 sm:h-10 flex flex-col items-center justify-center gap-1 border rounded-full relative transition-all duration-300">
+            <span className={`w-4 sm:w-5 h-[1px] bg-white transition-all duration-500 ${isOpen ? 'rotate-45 translate-y-[2px]' : ''}`}></span>
+            <span className={`w-4 sm:w-5 h-[1px] bg-white transition-all duration-500 ${isOpen ? '-rotate-45 -translate-y-[2px]' : ''}`}></span>
           </div>
         </div>
       </nav>
@@ -118,7 +118,7 @@ const Navbar = () => {
               <div className="flex flex-col gap-3 sm:gap-4">
                 {['Home', 'About Us', 'Past Events', 'Sponsors'].map((link) => (
                   <div key={link} className="menu-link-item overflow-hidden">
-                    <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-inter font-bold tracking-tighter hover:text-[var(--color-primary-orange)] hover:drop-shadow-[0_0_15px_rgba(255,69,0,0.5)] cursor-pointer transition-all duration-300">
+                    <p className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300">
                       {link}
                     </p>
                   </div>
