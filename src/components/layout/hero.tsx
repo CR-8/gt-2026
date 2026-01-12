@@ -10,10 +10,10 @@ export default function Hero() {
       <div className="absolute inset-0">
         <GridScan
           sensitivity={0.55}
-          lineThickness={3.7}
-          linesColor="#392e4e"
+          lineThickness={0.8}
+          linesColor="#3e658e"
           gridScale={0.1}
-          scanColor="#FF9FFC"
+          scanColor="#ff9e9e"
           scanOpacity={0.4}
           enablePost
           bloomIntensity={0.6}
