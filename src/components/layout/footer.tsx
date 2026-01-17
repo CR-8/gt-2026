@@ -29,7 +29,7 @@ function Footer() {
   ];
 
   return (
-    <footer className='relative w-full min-h-screen bg-black text-white overflow-hidden flex flex-col'>      
+    <footer className='main-footer relative w-full min-h-screen bg-black text-white overflow-hidden flex flex-col'>      
       {/* Gradient Background Effect */}
       <div className='absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-red-900/30' />
       
@@ -82,16 +82,18 @@ function Footer() {
       {/* Middle Section - Copyright */}
       <div className='relative z-10 px-4 sm:px-6 md:px-8 lg:px-16 pb-4 mt-4 sm:mt-6'>
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6 text-xs sm:text-sm text-white/60'>
-          <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 md:gap-8'>
+          <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 md:gap-8 text-md font-semibold'>
             <span>All copyrights @SRMCEM Robotics Club</span>
             <a href='#' className='hover:text-white transition-colors duration-300'>
               Terms and Conditions
             </a>
           </div>
-          
-          <div className='text-xs sm:text-sm'>
-            Designed By Pratyush Tiwari
-          </div>
+
+          <Link href="https://www.linkedin.com/in/pratyush-tiwari-cr8/" target="_blank" className='hover:text-white transition-colors duration-300'>
+            <div className='text-md sm:text-md font-semibold underline'>
+              Designed By Pratyush Tiwari
+            </div>
+          </Link>
         </div>
       </div>
 

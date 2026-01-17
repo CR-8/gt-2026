@@ -187,10 +187,10 @@ export default function RegistrationModal({ event, isOpen, onClose }: Registrati
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-[var(--color-bg-charcoal)] border-2 border-[var(--color-primary-cyan)]/30 text-white p-0 overflow-hidden">
+      <DialogContent className="max-w-4xl h-[90vh] bg-[var(--color-bg-charcoal)] border-2 border-[var(--color-primary-cyan)]/30 text-white p-0 overflow-hidden flex flex-col">
         {step === 'details' && (
           <>
-            <DialogHeader className="p-6 border-b border-[var(--color-primary-cyan)]/20">
+            <DialogHeader className="p-6 border-b border-[var(--color-primary-cyan)]/20 flex-shrink-0">
               <DialogTitle className="text-2xl font-orbitron font-bold text-[var(--color-primary-cyan)]">
                 Register for {event.name}
               </DialogTitle>
@@ -199,25 +199,26 @@ export default function RegistrationModal({ event, isOpen, onClose }: Registrati
               </DialogDescription>
             </DialogHeader>
 
-            <ScrollArea className="h-[60vh] overflow-y-auto">
-              <div className="p-6">
-                <form onSubmit={handleDetailsSubmit} className="space-y-6">
-                {/* Team Details */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-orbitron font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-                    <span className="w-1 h-5 bg-[var(--color-primary-cyan)]"></span>
-                    Team Information
-                  </h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="teamName" className="text-[var(--color-text-secondary)] font-space-mono text-sm">
-                        Team Name *
-                      </Label>
-                      <Input
-                        id="teamName"
-                        value={teamName}
-                        onChange={(e) => setTeamName(e.target.value)}
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-6">
+                  <form onSubmit={handleDetailsSubmit} className="space-y-6">
+                  {/* Team Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-orbitron font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+                      <span className="w-1 h-5 bg-[var(--color-primary-cyan)]"></span>
+                      Team Information
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="teamName" className="text-[var(--color-text-secondary)] font-space-mono text-sm">
+                          Team Name *
+                        </Label>
+                        <Input
+                          id="teamName"
+                          value={teamName}
+                          onChange={(e) => setTeamName(e.target.value)}
                         className="bg-[var(--color-bg-slate)] border-[var(--color-primary-cyan)]/30 text-white focus:border-[var(--color-primary-cyan)]"
                         required
                       />
@@ -379,12 +380,13 @@ export default function RegistrationModal({ event, isOpen, onClose }: Registrati
               </form>
               </div>
             </ScrollArea>
+          </div>
           </>
         )}
 
         {step === 'payment' && (
           <>
-            <DialogHeader className="p-6 border-b border-[var(--color-primary-cyan)]/20">
+            <DialogHeader className="p-6 border-b border-[var(--color-primary-cyan)]/20 flex-shrink-0">
               <DialogTitle className="text-2xl font-orbitron font-bold text-[var(--color-primary-cyan)]">
                 Payment Details
               </DialogTitle>
@@ -393,38 +395,38 @@ export default function RegistrationModal({ event, isOpen, onClose }: Registrati
               </DialogDescription>
             </DialogHeader>
 
-            <ScrollArea className="h-[60vh] overflow-y-auto">
-              <div className="p-6">
-                <form onSubmit={handlePayment} className="space-y-6">
-                  {/* Payment Summary */}
-                  <div className="border border-[var(--color-primary-orange)]/30 bg-[var(--color-bg-slate)]/30 p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[var(--color-text-secondary)] font-inter">Event</span>
-                      <span className="text-[var(--color-text-primary)] font-orbitron">{event.name}</span>
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-6 space-y-6">
+                    {/* Payment Summary */}
+                    <div className="border border-[var(--color-primary-orange)]/30 bg-[var(--color-bg-slate)]/30 p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[var(--color-text-secondary)] font-inter">Event</span>
+                        <span className="text-[var(--color-text-primary)] font-orbitron">{event.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[var(--color-text-secondary)] font-inter">Team</span>
+                        <span className="text-[var(--color-text-primary)] font-inter">{teamName}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[var(--color-text-secondary)] font-inter">Members</span>
+                        <span className="text-[var(--color-text-primary)] font-inter">{teamMembers.length + 1}</span>
+                      </div>
+                      <div className="h-px bg-[var(--color-primary-cyan)]/20 my-3"></div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[var(--color-primary-orange)] font-orbitron font-bold">Total Amount</span>
+                        <span className="text-2xl text-[var(--color-primary-orange)] font-orbitron font-bold">₹500</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[var(--color-text-secondary)] font-inter">Team</span>
-                      <span className="text-[var(--color-text-primary)] font-inter">{teamName}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[var(--color-text-secondary)] font-inter">Members</span>
-                      <span className="text-[var(--color-text-primary)] font-inter">{teamMembers.length + 1}</span>
-                    </div>
-                    <div className="h-px bg-[var(--color-primary-cyan)]/20 my-3"></div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-primary-orange)] font-orbitron font-bold">Total Amount</span>
-                      <span className="text-2xl text-[var(--color-primary-orange)] font-orbitron font-bold">₹500</span>
-                    </div>
-                  </div>
 
-                  {/* UPI Payment Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-orbitron font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-                      <svg className="w-5 h-5 text-[var(--color-primary-cyan)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      UPI Payment
-                    </h3>
+                    {/* UPI Payment Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-orbitron font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+                        <svg className="w-5 h-5 text-[var(--color-primary-cyan)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        UPI Payment
+                      </h3>
 
                     {/* Payment Provider Notice */}
                     <div className="border border-[var(--color-primary-orange)]/30 bg-[var(--color-primary-orange)]/5 p-4 rounded">
@@ -474,29 +476,29 @@ export default function RegistrationModal({ event, isOpen, onClose }: Registrati
                         Scan QR code with any UPI app to pay
                       </p>
                     </div>
-                  </div>
+                    </div>
+                </div>
+              </ScrollArea>
+            </div>
 
-                  <div className="flex justify-between gap-3 pt-4 border-t border-[var(--color-primary-cyan)]/20">
-                    <Button
-                      type="button"
-                      onClick={() => setStep('details')}
-                      variant="outline"
-                      className="border-[var(--color-primary-cyan)]/30 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-slate)]"
-                      disabled={isProcessing}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="bg-[var(--color-primary-cyan)] hover:bg-[var(--color-primary-cyan)]/80 text-[var(--color-bg-black)] font-orbitron font-bold"
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? 'Processing...' : 'Continue to Confirmation'}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </ScrollArea>
+            <div className="flex-shrink-0 flex justify-between gap-3 p-6 pt-4 border-t border-[var(--color-primary-cyan)]/20">
+              <Button
+                type="button"
+                onClick={() => setStep('details')}
+                variant="outline"
+                className="border-[var(--color-primary-cyan)]/30 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-slate)]"
+                disabled={isProcessing}
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handlePayment}
+                className="bg-[var(--color-primary-cyan)] hover:bg-[var(--color-primary-cyan)]/80 text-[var(--color-bg-black)] font-orbitron font-bold"
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Processing...' : 'Continue to Confirmation'}
+              </Button>
+            </div>
           </>
         )}
 

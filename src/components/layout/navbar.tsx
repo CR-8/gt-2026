@@ -102,7 +102,7 @@ const Navbar = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative text-white">
+    <nav ref={containerRef} className="main-navbar relative text-white">
       {/* Top Navigation Bar */}
       <nav className="fixed top-0 left-0 w-screen flex justify-between items-center p-4 sm:p-6 md:p-8 z-[100] pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent mx-auto">
         <Link href="/" className="logo pointer-events-auto w-14 h-14 sm:w-18 sm:h-18 cursor-pointer">
@@ -179,7 +179,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

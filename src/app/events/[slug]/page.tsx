@@ -16,7 +16,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { RegistrationForm } from '@/components/register/form';
-import { Download, Calendar, Clock, MapPin, Users, Trophy, DollarSign, Share2, ArrowUp, ChevronLeft } from 'lucide-react';
+import { Download, Calendar, Clock, MapPin, Users, Trophy, IndianRupee, Share2, ArrowUp, ChevronLeft, FileText, CheckCircle } from 'lucide-react';
 
 function EventPage() {
   const params = useParams();
@@ -121,14 +121,24 @@ function EventPage() {
             {event.title}
           </h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-400">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>{event.date}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span>{event.readTime}</span>
-            </div>
+            {event.date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{event.date}</span>
+              </div>
+            )}
+            {event.time && (
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{event.time}</span>
+              </div>
+            )}
+            {event.location && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{event.location}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center text-[10px] font-bold">
                 G
@@ -142,57 +152,115 @@ function EventPage() {
         <div className="grid grid-cols-1 lg:grid-cols-11 gap-8">
           {/* Main Content - 8 columns */}
           <div className="lg:col-span-8">
-            {/* Event Poster */}
-            <div className="mb-12 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-600/20 via-red-600/20 to-pink-600/20 aspect-video relative border border-neutral-800">
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center px-8">
-                  <div className="text-5xl md:text-6xl lg:text-7xl font-bold opacity-20 text-white leading-tight">
-                    {event.title}
+            {/* Event Banner */}
+            <div className="mb-12 rounded-2xl overflow-hidden aspect-video relative border border-neutral-800">
+              {event.bannerUrl ? (
+                <img
+                  src={event.bannerUrl}
+                  alt={`${event.title} banner`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-red-600/20 to-pink-600/20"></div>
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center px-8">
+                      <div className="text-5xl md:text-6xl lg:text-7xl font-bold opacity-20 text-white leading-tight">
+                        {event.title}
+                      </div>
+                      <div className="mt-4 text-neutral-400 text-sm uppercase tracking-wider">
+                        {event.category}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-4 text-neutral-400 text-sm uppercase tracking-wider">
-                    {event.category}
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             {/* Event Details Bar */}
             <div className="mb-12 p-6 rounded-2xl bg-neutral-900/50 border border-neutral-800 backdrop-blur-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {event.date && (
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-orange-600/10 border border-orange-600/20">
+                      <Calendar className="w-5 h-5 text-orange-400" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-neutral-500 mb-1">Date</div>
+                      <div className="text-white font-medium">{event.date}</div>
+                    </div>
+                  </div>
+                )}
+                {event.time && (
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-purple-600/10 border border-purple-600/20">
+                      <Clock className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-neutral-500 mb-1">Time</div>
+                      <div className="text-white font-medium">{event.time}</div>
+                    </div>
+                  </div>
+                )}
+                {event.location && (
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-pink-600/10 border border-pink-600/20">
+                      <MapPin className="w-5 h-5 text-pink-400" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-neutral-500 mb-1">Location</div>
+                      <div className="text-white font-medium">{event.location}</div>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-orange-600/10 border border-orange-600/20">
-                    <Calendar className="w-5 h-5 text-orange-400" />
+                  <div className="p-2 rounded-lg bg-green-600/10 border border-green-600/20">
+                    <Users className="w-5 h-5 text-green-400" />
                   </div>
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Date</div>
-                    <div className="text-white font-medium">{event.date}</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-purple-600/10 border border-purple-600/20">
-                    <Clock className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-neutral-500 mb-1">Time</div>
-                    <div className="text-white font-medium">{event.time}</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-pink-600/10 border border-pink-600/20">
-                    <MapPin className="w-5 h-5 text-pink-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-neutral-500 mb-1">Location</div>
-                    <div className="text-white font-medium">{event.location}</div>
+                    <div className="text-xs text-neutral-500 mb-1">Team Size</div>
+                    <div className="text-white font-medium">{event.teamSize || '1'} members</div>
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* About Section */}
+            {event.fullDescription && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold mb-4 text-white">About This Event</h2>
+                <p className="text-neutral-300 leading-relaxed text-lg">{event.fullDescription}</p>
+              </div>
+            )}
+
+            {/* Rules Section */}
+            {event.rules && event.rules.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+                  <FileText className="w-6 h-6 text-orange-500" />
+                  Rules & Guidelines
+                </h2>
+                <div className="space-y-3">
+                  {event.rules.map((rule, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-start gap-4 p-4 rounded-xl bg-neutral-900/50 border border-neutral-800 hover:border-neutral-700 transition-colors"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-600/20 border border-orange-600/30 flex items-center justify-center">
+                        <span className="text-orange-500 font-bold text-sm">{index + 1}</span>
+                      </div>
+                      <p className="text-neutral-300 leading-relaxed pt-1">{rule}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Markdown Content */}
-            <div className="prose prose-invert prose-lg max-w-none">
-              <ReactMarkdown
+            {event.content && (
+              <div className="prose prose-invert prose-lg max-w-none">
+                <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({...props}) => <h1 className="text-4xl font-bold mt-8 mb-6 bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent" {...props} />,
@@ -253,6 +321,7 @@ function EventPage() {
                 {event.content}
               </ReactMarkdown>
             </div>
+            )}
           </div>
 
           {/* Sidebar - 3 columns */}
@@ -262,22 +331,34 @@ function EventPage() {
               <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-600 to-orange-700 shadow-lg shadow-orange-600/20">
                 <h3 className="text-xl font-bold mb-4 text-white">Ready to Participate?</h3>
                 <div className='flex flex-col gap-3'>
-                  <Button 
-                    onClick={() => setIsFormOpen(true)}
-                    className="w-full bg-white text-orange-600 hover:bg-neutral-100 font-semibold shadow-md"
-                    size="lg"
-                  >
-                    Register Now
-                  </Button>
-                  <Button 
-                    onClick={() => window.open(event.rulebookUrl || '#', '_blank')}
-                    variant="outline"
-                    className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
-                    size="lg"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Brochure
-                  </Button>
+                  {event.registrationOpen ? (
+                    <Button 
+                      onClick={() => setIsFormOpen(true)}
+                      className="w-full bg-white text-orange-600 hover:bg-neutral-100 font-semibold shadow-md"
+                      size="lg"
+                    >
+                      Register Now
+                    </Button>
+                  ) : (
+                    <Button 
+                      disabled
+                      className="w-full bg-white/50 text-orange-600/50 font-semibold cursor-not-allowed"
+                      size="lg"
+                    >
+                      Registration Closed
+                    </Button>
+                  )}
+                  {event.rulebookUrl && (
+                    <Button 
+                      onClick={() => window.open(event.rulebookUrl || '#', '_blank')}
+                      variant="outline"
+                      className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+                      size="lg"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Rulebook
+                    </Button>
+                  )}
                 </div>
               </div>
               {/* Prize Pool Card */}
@@ -321,11 +402,11 @@ function EventPage() {
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-lg bg-green-600/10 border border-green-600/20">
-                      <DollarSign className="w-5 h-5 text-green-400" />
+                      <IndianRupee className="w-5 h-5 text-green-400" />
                     </div>
                     <div className="flex-1">
                       <div className="text-xs text-neutral-500 mb-1">Entry Fee</div>
-                      <div className="text-lg font-semibold text-white">{event.participationFee}</div>
+                      <div className="text-lg font-semibold text-white">{event.entryFee || 'Free'}</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -334,9 +415,22 @@ function EventPage() {
                     </div>
                     <div className="flex-1">
                       <div className="text-xs text-neutral-500 mb-1">Team Size</div>
-                      <div className="text-lg font-semibold text-white">{event.teamSize}</div>
+                      <div className="text-lg font-semibold text-white">{event.teamSize || '1'} members</div>
                     </div>
                   </div>
+                  {event.registrationOpen !== undefined && (
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${event.registrationOpen ? 'bg-green-600/10 border border-green-600/20' : 'bg-red-600/10 border border-red-600/20'}`}>
+                        <CheckCircle className={`w-5 h-5 ${event.registrationOpen ? 'text-green-400' : 'text-red-400'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-neutral-500 mb-1">Registration Status</div>
+                        <div className={`text-lg font-semibold ${event.registrationOpen ? 'text-green-400' : 'text-red-400'}`}>
+                          {event.registrationOpen ? 'Open' : 'Closed'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -380,11 +474,12 @@ function EventPage() {
       </div>
 
       {/* Registration Form Modal */}
-      {isFormOpen && (
+      {isFormOpen && event.id && (
         <RegistrationForm
+          eventId={event.id}
           eventSlug={event.slug}
           eventTitle={event.title}
-          participationFee={event.participationFee || 'Free'}
+          participationFee={event.entryFee || 'Free'}
           teamSize={event.teamSize || '1-4'}
           onClose={() => setIsFormOpen(false)}
         />
