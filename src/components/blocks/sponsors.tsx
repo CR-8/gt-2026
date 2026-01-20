@@ -36,7 +36,7 @@ function Sponsors() {
   ];
 
   return (
-    <div id="sponsors" className="relative w-full min-h-screen pb-16 md:pb-26">
+    <div id="sponsors" className="relative w-full md:min-h-screen pb-16 md:pb-26">
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black via-black/80 to-transparent pointer-events-none z-10"></div>
 
       <div className="mx-4 sm:mx-6 md:mx-8 h-20 w-auto max-w-xs text-xl sm:text-2xl flex items-center justify-center gap-2 pt-20 sm:pt-28 md:pt-34">

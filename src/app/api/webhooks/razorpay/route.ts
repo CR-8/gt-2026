@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { sendRegistrationSuccessEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(request: Request) {
@@ -55,7 +56,20 @@ export async function POST(request: Request) {
           payment_mode: paymentMethod,
         })
         .eq('payment_order_id', orderId)
-        .select()
+        .select(`
+          id,
+          team_name,
+          captain_name,
+          captain_email,
+          college_name,
+          total_amount_payable,
+          created_at,
+          event_id,
+          events (
+            name,
+            slug
+          )
+        `)
         .single()
 
       if (updateError) {
@@ -68,11 +82,39 @@ export async function POST(request: Request) {
 
       console.log(`Team ${team.id} payment marked as captured`)
 
-      // TODO: Send confirmation email to captain
+      // 5. Fetch team members
+      const { data: members } = await supabase
+        .from('team_members')
+        .select('member_name')
+        .eq('team_id', team.id)
+        .neq('role', 'captain')
+
+      // 6. Send confirmation email to captain
+      try {
+        const eventData = team.events as { name: string; slug: string } | null;
+        
+        await sendRegistrationSuccessEmail({
+          teamName: team.team_name,
+          captainName: team.captain_name,
+          captainEmail: team.captain_email,
+          eventName: eventData?.name || 'Event',
+          eventSlug: eventData?.slug || '',
+          collegeName: team.college_name,
+          teamMembers: members?.map(m => m.member_name) || [],
+          amountPaid: team.total_amount_payable,
+          paymentId: paymentId,
+          registrationDate: team.created_at,
+        });
+        
+        console.log(`Confirmation email sent to ${team.captain_email}`);
+      } catch (emailError) {
+        // Log but don't fail the webhook if email fails
+        console.error('Failed to send confirmation email:', emailError);
+      }
 
       return NextResponse.json({ 
         success: true,
-        message: 'Payment status updated'
+        message: 'Payment status updated and confirmation email sent'
       })
     }
 

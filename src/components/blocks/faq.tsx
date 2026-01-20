@@ -65,7 +65,7 @@ const faqData = [
   },
 ]
   return (
-    <div className='min-h-screen w-screen bg-black relative flex flex-col tracking-tighter pb-24 sm:pb-32 md:pb-40'>
+    <div className='md:min-h-screen w-screen bg-black relative flex flex-col tracking-tighter pb-24 sm:pb-32 md:pb-40'>
       {/* Gradient transition for seamless blend with next section */}
       <div className='absolute bottom-0 left-0 right-0 h-32 sm:h-36 md:h-40 bg-gradient-to-b from-transparent via-black/50 to-black pointer-events-none z-30'></div>
       

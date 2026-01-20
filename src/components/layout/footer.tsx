@@ -29,7 +29,7 @@ function Footer() {
   ];
 
   return (
-    <footer className='main-footer relative w-full min-h-screen bg-black text-white overflow-hidden flex flex-col'>      
+    <footer className='main-footer relative w-full md:min-h-screen bg-black text-white overflow-hidden flex flex-col'>      
       {/* Gradient Background Effect */}
       <div className='absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-red-900/30' />
       

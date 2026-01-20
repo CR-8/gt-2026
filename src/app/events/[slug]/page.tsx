@@ -108,9 +108,9 @@ function EventPage() {
       <div className="mx-auto px-8 lg:px-16 py-12">
         {/* Event Header */}
         <div className="mb-12">
-          <Button asChild variant="ghost" className="mb-6 -ml-2">
-            <Link href="/#events" className="inline-flex items-center gap-2 text-neutral-400 hover:text-white">
-              <ChevronLeft className="w-4 h-4" />
+          <Button asChild variant="ghost" className="mb-6 -ml-2 mx-4">
+            <Link href="/events" className="inline-flex items-center gap-2 text-neutral-400 hover:text-white">
+              <ChevronLeft className="w-4 h-5" />
               Back to Events
             </Link>
           </Button>

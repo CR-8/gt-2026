@@ -2,11 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 import Lenis from 'lenis';
 
 const Navbar = () => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -92,8 +94,11 @@ const Navbar = () => {
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 800);
-    } else if (link === 'Past Events') {
-      scrollToSection('gallery');
+    } else if (link === 'Events') {
+      toggleMenu();
+      setTimeout(() => {
+        router.push('/events');
+      }, 800);
     } else if (link === 'Sponsors') {
       scrollToSection('sponsors');
     }
@@ -146,7 +151,7 @@ const Navbar = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-10">
               {/* Main Links */}
               <div className="flex flex-col gap-3 sm:gap-4">
-                {['Home', 'Past Events', 'Sponsors'].map((link) => (
+                {['Home', 'Events', 'Sponsors'].map((link) => (
                   <div key={link} className="menu-link-item overflow-hidden">
                     <p 
                       onClick={() => handleNavClick(link)}
@@ -156,6 +161,14 @@ const Navbar = () => {
                     </p>
                   </div>
                 ))}
+                <div className="menu-link-item overflow-hidden">
+                  <p 
+                    onClick={() => handleExternalLink('https://www.roboticsclubsrmcem.in')}
+                    className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300"
+                  >
+                    About Us
+                  </p>
+                </div>
                 {/* External Links */}
                 <div className="menu-link-item overflow-hidden">
                   <p 
@@ -165,14 +178,7 @@ const Navbar = () => {
                     Learn
                   </p>
                 </div>
-                <div className="menu-link-item overflow-hidden">
-                  <p 
-                    onClick={() => handleExternalLink('https://www.roboticsclubsrmcem.in')}
-                    className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300"
-                  >
-                    About Us
-                  </p>
-                </div>
+
               </div>
               {/* Secondary Links/Tags */}
               <div className="flex flex-col gap-2 pt-6 md:pt-12 text-[var(--color-text-tertiary)] uppercase text-xs tracking-widest">

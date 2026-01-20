@@ -177,6 +177,21 @@ font-family: 'Source Code Pro', monospace;
 
 ---
 
+## 📱 MOBILE RESPONSIVENESS GUIDELINES
+
+### Section Heights:
+- **Desktop (md+):** Use `min-h-screen` for full-viewport sections
+- **Mobile:** Avoid `min-h-screen` - let content determine height naturally
+- **Pattern:** Use `md:min-h-screen` instead of `min-h-screen`
+
+### Why No Fixed Min-Heights on Mobile:
+- Mobile viewports vary significantly (from 568px to 896px+)
+- Fixed heights can cause excessive whitespace on smaller screens
+- Content-driven heights improve readability and scroll experience
+- Reduces unnecessary scrolling on content-light sections
+
+---
+
 ## ✅ WCAG COMPLIANCE CHECKLIST
 
 ### Contrast Ratios Achieved:
