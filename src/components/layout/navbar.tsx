@@ -105,8 +105,6 @@ const Navbar = () => {
       window.open(url, '_blank', 'noopener,noreferrer');
     }, 800);
     }
-  };
-
   return (
     <nav ref={containerRef} className="main-navbar relative text-white">
       {/* Top Navigation Bar */}
