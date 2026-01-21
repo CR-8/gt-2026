@@ -91,19 +91,29 @@ export async function POST(request: Request) {
 
       // 6. Send confirmation email to captain
       try {
-        const eventData = team.events as { name: string; slug: string } | null;
+        const eventsArray = team.events as { name: string; slug: string }[] | null;
+        const eventData = eventsArray?.[0] ?? null;
+        const eventUrl = `https://gantavya.roboticsclubsrmcem.in/events/${eventData?.slug || ''}`;
+        const formattedAmount = `₹${team.total_amount_payable.toLocaleString('en-IN')}`;
+        const formattedDate = new Date(team.created_at).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
         
         await sendRegistrationSuccessEmail({
-          teamName: team.team_name,
-          captainName: team.captain_name,
-          captainEmail: team.captain_email,
-          eventName: eventData?.name || 'Event',
-          eventSlug: eventData?.slug || '',
-          collegeName: team.college_name,
-          teamMembers: members?.map(m => m.member_name) || [],
-          amountPaid: team.total_amount_payable,
-          paymentId: paymentId,
-          registrationDate: team.created_at,
+          team_name: team.team_name,
+          captain_name: team.captain_name,
+          captain_email: team.captain_email,
+          event_name: eventData?.name || 'Event',
+          event_url: eventUrl,
+          college_name: team.college_name,
+          team_members: members?.map(m => m.member_name).join(', ') || 'None',
+          amount_paid: formattedAmount,
+          payment_id: paymentId,
+          registration_date: formattedDate,
         });
         
         console.log(`Confirmation email sent to ${team.captain_email}`);
