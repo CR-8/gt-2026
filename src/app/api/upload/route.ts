@@ -24,6 +24,8 @@ export async function POST(request: Request) {
     // Allowed file types
     const allowedTypes = [
       'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'image/png',
       'image/jpeg',
       'image/jpg',
@@ -31,10 +33,17 @@ export async function POST(request: Request) {
       'image/gif'
     ]
 
+    // Check if file type is a document (PDF or Word)
+    const isDocument = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ].includes(file.type)
+
     // Validate file type
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Only PDF and image files (PNG, JPG, WebP, GIF) are allowed' },
+        { error: 'Only PDF, Word documents, and image files (PNG, JPG, WebP, GIF) are allowed' },
         { status: 400 }
       )
     }
@@ -53,14 +62,32 @@ export async function POST(request: Request) {
     const base64 = buffer.toString('base64')
     const dataUri = `data:${file.type};base64,${base64}`
 
-    // Determine resource type based on file type
-    const resourceType = file.type === 'application/pdf' ? 'raw' : 'image'
+    // Determine resource type based on file type (documents = raw, images = image)
+    const resourceType = isDocument ? 'raw' : 'image'
+    
+    // Get file extension
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'pdf'
+    
+    // Clean filename (remove special chars)
+    const cleanName = file.name
+      .replace(/\.[^/.]+$/, '') // Remove extension
+      .replace(/[^a-zA-Z0-9-]/g, '_') // Replace special chars with underscore
+      .replace(/_+/g, '_') // Remove multiple underscores
+      .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+    
+    // Create a readable filename for the download
+    const downloadFilename = `${cleanName}.${fileExtension}`
+    
+    // For documents, include extension in public_id
+    const publicId = isDocument 
+      ? `${Date.now()}-${cleanName}.${fileExtension}`
+      : `${Date.now()}-${cleanName}`
 
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(dataUri, {
       folder: folder,
       resource_type: resourceType,
-      public_id: `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, '')}`,
+      public_id: publicId,
     })
 
     return NextResponse.json({ 
@@ -68,7 +95,9 @@ export async function POST(request: Request) {
       url: result.secure_url,
       publicId: result.public_id,
       filename: file.name,
-      resourceType: resourceType
+      downloadFilename: downloadFilename,
+      resourceType: resourceType,
+      fileExtension: fileExtension
     })
   } catch (error) {
     console.error('Upload error:', error)

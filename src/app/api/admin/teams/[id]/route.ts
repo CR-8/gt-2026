@@ -141,18 +141,22 @@ export async function PATCH(
           {
             filename: `Gantavya-Pass-${teamId}.png`,
             content: passBase64,
-            type: 'image/png',
+            contentType: 'image/png',
           }
         ] : undefined
 
-        await sendEmail({
+        const emailResult = await sendEmail({
           to: currentTeam.captain_email,
           subject: `🎉 Payment Verified - ${eventName} | Gantavya 2026`,
           html: emailHtml,
           attachments,
         })
 
-        console.log(`Confirmation email with pass sent to ${currentTeam.captain_email}`)
+        if (emailResult.success) {
+          console.log(`Confirmation email with pass sent to ${currentTeam.captain_email}, messageId: ${emailResult.messageId}`)
+        } else {
+          console.error(`Failed to send email to ${currentTeam.captain_email}:`, emailResult.error)
+        }
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError)
         // Don't fail the request if email fails - team is already updated

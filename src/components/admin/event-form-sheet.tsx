@@ -305,14 +305,14 @@ export function EventFormSheet({
 
           {/* Rulebook Upload */}
           <div className="space-y-2">
-            <Label className="text-white text-sm">Rulebook PDF</Label>
+            <Label className="text-white text-sm">Rulebook (PDF/DOCX)</Label>
             <div className="flex gap-2">
               <Input
                 id="rulebook_url"
                 name="rulebook_url"
                 value={formData.rulebook_url}
                 onChange={onFormChange}
-                placeholder="URL to rulebook PDF or upload below"
+                placeholder="URL to rulebook or upload below"
                 className="bg-neutral-800 border-neutral-700 text-white flex-1 text-sm"
               />
             </div>
@@ -320,11 +320,11 @@ export function EventFormSheet({
               <label className="flex items-center gap-2 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-md cursor-pointer hover:bg-neutral-700 transition-colors">
                 <Upload className="w-4 h-4 text-neutral-400" />
                 <span className="text-xs sm:text-sm text-neutral-300">
-                  {uploading ? 'Uploading...' : 'Upload PDF'}
+                  {uploading ? 'Uploading...' : 'Upload Rulebook'}
                 </span>
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.doc,.docx"
                   onChange={onFileUpload}
                   className="hidden"
                   disabled={uploading}
@@ -338,7 +338,7 @@ export function EventFormSheet({
                   className="flex items-center gap-2 text-orange-500 hover:text-orange-400 text-xs sm:text-sm"
                 >
                   <FileText className="w-4 h-4" />
-                  View PDF
+                  View Rulebook
                 </a>
               )}
             </div>

@@ -17,6 +17,54 @@ function EventPage() {
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to download rulebook with proper filename
+  const downloadRulebook = async (url: string, eventTitle: string) => {
+    try {
+      // Extract filename from URL
+      const urlParts = url.split('/');
+      let filename = urlParts[urlParts.length - 1];
+      
+      // Decode URL-encoded characters
+      if (filename) {
+        filename = decodeURIComponent(filename);
+      }
+      
+      // Check if filename has an extension, if not add .pdf as default
+      if (filename && !filename.includes('.')) {
+        filename = `${filename}.pdf`;
+      }
+      
+      // If filename is empty or invalid, use event title with .pdf
+      if (!filename || filename === '' || filename === '.pdf') {
+        filename = `${eventTitle.replace(/[^a-zA-Z0-9-]/g, '_')}-rulebook.pdf`;
+      }
+      
+      // For Cloudinary raw files, we need to fetch and download manually
+      // to preserve the correct filename and extension
+      if (url.includes('cloudinary.com') && url.includes('/raw/')) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        
+        // Create a download link with the blob
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } else {
+        // For other URLs, open in new tab
+        window.open(url, '_blank');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   useEffect(() => {
     async function fetchEvent() {
       setLoading(true);
@@ -211,7 +259,7 @@ function EventPage() {
                   )}
                   {event.rulebookUrl && (
                     <Button 
-                      onClick={() => window.open(event.rulebookUrl || '#', '_blank')}
+                      onClick={() => downloadRulebook(event.rulebookUrl || '#', event.title)}
                       variant="outline"
                       className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
                       size="lg"
