@@ -89,8 +89,8 @@ async function generateBarcode(text: string): Promise<Buffer> {
         height: 10,            // Bar height in mm
         includetext: false,    // Don't include text below barcode
         textxalign: 'center',  // Center text
-        backgroundcolor: 'ffffff',
-        barcolor: 'E8E4DD',    // Match template text color
+        backgroundcolor: 'ffffff',  // Pure white background
+        barcolor: '000000',         // Pure black bars for scannability
       },
       (err: Error | string, png: Buffer) => {
         if (err) {
