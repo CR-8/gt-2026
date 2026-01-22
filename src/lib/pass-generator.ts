@@ -11,6 +11,37 @@ import bwipjs from 'bwip-js';
 import path from 'path';
 import fs from 'fs';
 
+// Register fonts for node-canvas
+let fontsRegistered = false;
+function ensureFontsRegistered() {
+  if (fontsRegistered) return;
+  
+  try {
+    // Try to register a system font that's commonly available
+    // On Vercel/Linux, DejaVu Sans is typically available
+    const fontPaths = [
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+      'C:\\Windows\\Fonts\\arial.ttf',
+      'C:\\Windows\\Fonts\\arialbd.ttf',
+    ];
+    
+    for (const fontPath of fontPaths) {
+      if (fs.existsSync(fontPath)) {
+        if (fontPath.includes('Bold') || fontPath.includes('arialbd')) {
+          registerFont(fontPath, { family: 'PassFont', weight: 'bold' });
+        } else {
+          registerFont(fontPath, { family: 'PassFont', weight: 'normal' });
+        }
+      }
+    }
+    
+    fontsRegistered = true;
+  } catch (error) {
+    console.warn('Could not register fonts:', error);
+  }
+}
+
 // Template dimensions
 const TEMPLATE_WIDTH = 2000;
 const TEMPLATE_HEIGHT = 647;
@@ -107,6 +138,9 @@ async function generateBarcode(text: string): Promise<Buffer> {
  * Generate event pass with team details
  */
 export async function generateEventPass(data: PassData): Promise<Buffer> {
+  // Ensure fonts are registered before creating canvas
+  ensureFontsRegistered();
+  
   // Load the template image
   const templatePath = path.join(process.cwd(), 'public', 'images', 'pass-template.png');
   
@@ -139,7 +173,8 @@ export async function generateEventPass(data: PassData): Promise<Buffer> {
   ) => {
     ctx.save();
     ctx.fillStyle = color;
-    ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
+    // Use PassFont (registered) with fallbacks for different environments
+    ctx.font = `${fontWeight} ${fontSize}px "PassFont", "DejaVu Sans", "Liberation Sans", Arial, sans-serif`;
     
     if (rotation) {
       ctx.translate(x, y);
