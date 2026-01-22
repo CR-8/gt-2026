@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Mono, Inter, Bricolage_Grotesque, Poppins } from "next/font/google";
 import LayoutWrapper from "@/components/layout/layout-wrapper";
-import RazorpayScript from "@/components/razorpay-script";
 import "./globals.css";
 
 const spaceMono = Space_Mono({
@@ -51,7 +50,6 @@ export default function RootLayout({
         <LayoutWrapper>
           {children}
         </LayoutWrapper>
-        <RazorpayScript />
       </body>
     </html>
   );

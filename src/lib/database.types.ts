@@ -48,10 +48,12 @@ export interface Database {
           total_amount_payable: number
           currency: string
           has_paid: boolean
-          payment_gateway: string
+          payment_gateway: 'razorpay' | 'upi' | 'free' | 'manual' | string
           payment_order_id: string | null
           payment_mode: 'upi' | 'card' | 'netbanking' | null
-          payment_status: 'created' | 'captured' | 'failed'
+          payment_status: 'created' | 'pending' | 'pending_verification' | 'completed' | 'failed' | 'refunded' | 'not_required'
+          transaction_id: string | null
+          account_holder_name: string | null
           is_active: boolean
           created_at: string
           updated_at: string

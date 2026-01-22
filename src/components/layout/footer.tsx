@@ -1,26 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Instagram, Linkedin, Mail } from 'lucide-react';
 
 function Footer() {
-  const [hoveredNav, setHoveredNav] = useState<number | null>(null);
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
-  const navItems = [
-    { label: 'Events', href: '#events', isExternal: false },
-    { label: 'Gallery', href: '#gallery', isExternal: false },
-    { label: 'Sponsors', href: '#sponsors', isExternal: false },
-    { label: 'Learn', href: 'https://learn.roboticsclubsrmcem.in', isExternal: true },
-    { label: 'About Us', href: 'https://www.roboticsclubsrmcem.in', isExternal: true },
-  ];
 
   const socialLinks = [
     { icon: Instagram, href: 'https://www.instagram.com/gantavya.fest/', label: 'Instagram' },
@@ -55,48 +41,6 @@ function Footer() {
             </div>
           </div>
 
-          {/* Navigation Pills */}
-          <div className='flex flex-wrap gap-2 sm:gap-3'>
-            {navItems.map((item, index) => (
-              item.isExternal ? (
-                <a
-                  key={index}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onMouseEnter={() => setHoveredNav(index)}
-                  onMouseLeave={() => setHoveredNav(null)}
-                  className='relative text-white px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 text-xs sm:text-sm font-medium overflow-hidden group cursor-pointer'
-                >
-                  <span 
-                    className={`absolute inset-0 bg-orange-600 rounded-full transition-transform duration-150 ease-out ${
-                      hoveredNav === index 
-                        ? 'translate-y-0' 
-                        : 'translate-y-full'
-                    }`}
-                  />
-                  <span className='relative z-10'>{item.label}</span>
-                </a>
-              ) : (
-                <button
-                  key={index}
-                  onClick={() => scrollToSection(item.href.substring(1))}
-                  onMouseEnter={() => setHoveredNav(index)}
-                  onMouseLeave={() => setHoveredNav(null)}
-                  className='relative text-white px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 text-xs sm:text-sm font-medium overflow-hidden group cursor-pointer'
-                >
-                  <span 
-                    className={`absolute inset-0 bg-orange-600 rounded-full transition-transform duration-150 ease-out ${
-                      hoveredNav === index 
-                        ? 'translate-y-0' 
-                        : 'translate-y-full'
-                    }`}
-                  />
-                  <span className='relative z-10'>{item.label}</span>
-                </button>
-              )
-            ))}
-          </div>
         </div>
       </div>
 

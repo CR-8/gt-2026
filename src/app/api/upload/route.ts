@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { v2 as cloudinary } from 'cloudinary'
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const folder = formData.get('folder') as string || 'uploads'
+    const folder = formData.get('folder') as string || 'gantavya'
 
     if (!file) {
       return NextResponse.json(
@@ -43,30 +47,28 @@ export async function POST(request: Request) {
       )
     }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filename = `${timestamp}-${sanitizedName}`
-
-    // Create directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public', folder)
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Write file to public folder
+    // Convert file to base64 for Cloudinary upload
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const filepath = join(uploadDir, filename)
-    await writeFile(filepath, buffer)
+    const base64 = buffer.toString('base64')
+    const dataUri = `data:${file.type};base64,${base64}`
 
-    // Return the public URL
-    const url = `/${folder}/${filename}`
+    // Determine resource type based on file type
+    const resourceType = file.type === 'application/pdf' ? 'raw' : 'image'
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: folder,
+      resource_type: resourceType,
+      public_id: `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, '')}`,
+    })
 
     return NextResponse.json({ 
       success: true, 
-      url,
-      filename 
+      url: result.secure_url,
+      publicId: result.public_id,
+      filename: file.name,
+      resourceType: resourceType
     })
   } catch (error) {
     console.error('Upload error:', error)

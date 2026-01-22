@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { sendEmail, getRegistrationConfirmationEmail } from '@/lib/email'
+import { generateEventPassBase64 } from '@/lib/pass-generator'
 
 // GET team details with members
 export async function GET(
@@ -66,6 +68,23 @@ export async function PATCH(
     const supabase = createServiceClient()
     const body = await request.json()
 
+    // Get the current team state before update
+    const { data: currentTeam } = await supabase
+      .from('teams')
+      .select(`
+        *,
+        events (
+          name,
+          title
+        )
+      `)
+      .eq('id', id)
+      .single()
+
+    const wasUnpaid = currentTeam && !currentTeam.has_paid
+    const isBeingVerified = body.has_paid === true && (body.payment_status === 'completed' || currentTeam?.payment_status === 'pending_verification')
+
+    // Update the team
     const { data: team, error } = await supabase
       .from('teams')
       .update(body)
@@ -81,7 +100,69 @@ export async function PATCH(
       )
     }
 
-    return NextResponse.json({ team })
+    // Send confirmation email if payment was just verified
+    if (wasUnpaid && isBeingVerified && currentTeam) {
+      try {
+        const eventName = currentTeam.events?.title || currentTeam.events?.name || 'Gantavya Event'
+        const teamId = currentTeam.team_code || currentTeam.id.slice(0, 8).toUpperCase()
+
+        // Get member count
+        const { count: memberCount } = await supabase
+          .from('team_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('team_id', currentTeam.id)
+
+        // Generate the event pass
+        let passBase64: string | null = null
+        try {
+          passBase64 = await generateEventPassBase64({
+            teamId: teamId,
+            teamName: currentTeam.team_name,
+            eventName: eventName,
+            collegeName: currentTeam.college_name || 'N/A',
+          })
+        } catch (passError) {
+          console.error('Error generating event pass:', passError)
+          // Continue without the pass if generation fails
+        }
+        
+        const emailHtml = getRegistrationConfirmationEmail({
+          teamName: currentTeam.team_name,
+          captainName: currentTeam.captain_name,
+          eventName: eventName,
+          teamId: teamId,
+          collegeName: currentTeam.college_name,
+          memberCount: memberCount || undefined,
+          transactionId: currentTeam.transaction_id,
+        })
+
+        // Prepare attachments
+        const attachments = passBase64 ? [
+          {
+            filename: `Gantavya-Pass-${teamId}.png`,
+            content: passBase64,
+            type: 'image/png',
+          }
+        ] : undefined
+
+        await sendEmail({
+          to: currentTeam.captain_email,
+          subject: `🎉 Payment Verified - ${eventName} | Gantavya 2026`,
+          html: emailHtml,
+          attachments,
+        })
+
+        console.log(`Confirmation email with pass sent to ${currentTeam.captain_email}`)
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError)
+        // Don't fail the request if email fails - team is already updated
+      }
+    }
+
+    return NextResponse.json({ 
+      team,
+      emailSent: wasUnpaid && isBeingVerified
+    })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(

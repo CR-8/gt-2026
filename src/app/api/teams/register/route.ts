@@ -9,6 +9,12 @@ const memberSchema = z.object({
   member_contact: z.string().regex(/^[0-9]{10}$/, 'Contact must be 10 digits'),
 })
 
+const paymentSchema = z.object({
+  transaction_id: z.string().min(6, 'Transaction ID must be at least 6 characters'),
+  account_holder_name: z.string().min(2, 'Account holder name must be at least 2 characters'),
+  amount: z.number().positive('Amount must be positive'),
+}).nullable().optional()
+
 const registrationSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
   team_name: z.string().min(2, 'Team name must be at least 2 characters'),
@@ -19,9 +25,13 @@ const registrationSchema = z.object({
     contact: z.string().regex(/^[0-9]{10}$/, 'Contact must be 10 digits'),
   }),
   members: z.array(memberSchema).optional(),
+  payment: paymentSchema,
 })
 
 export async function POST(request: Request) {
+  const supabase = createServiceClient()
+  let createdTeamId: string | null = null
+  
   try {
     const body = await request.json()
     
@@ -34,9 +44,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { event_id, team_name, college_name, captain, members = [] } = validation.data
-
-    const supabase = createServiceClient()
+    const { event_id, team_name, college_name, captain, members = [], payment } = validation.data
 
     // 1. Check if event exists and registration is open
     const { data: event, error: eventError } = await supabase
@@ -72,7 +80,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // 3. Check if captain email is already registered
+    // 3. Check if captain email is already registered for this event
     const { data: existingTeam } = await supabase
       .from('teams')
       .select('id')
@@ -87,10 +95,31 @@ export async function POST(request: Request) {
       )
     }
 
-    // 4. Calculate total amount from event's entry_fee
+    // 4. Check if any member email is already registered for this event
+    if (members.length > 0) {
+      const memberEmails = members.map(m => m.member_email)
+      const { data: existingMembers } = await supabase
+        .from('team_members')
+        .select('member_email, teams!inner(event_id)')
+        .in('member_email', memberEmails)
+        .eq('teams.event_id', event_id)
+
+      if (existingMembers && existingMembers.length > 0) {
+        const duplicateEmail = existingMembers[0].member_email
+        return NextResponse.json(
+          { error: `Email ${duplicateEmail} is already registered for this event` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 5. Calculate total amount from event's entry_fee
     const registrationFee = event.entry_fee || 0
 
-    // 5. Insert team
+    // === BEGIN TRANSACTION-LIKE OPERATIONS ===
+    // All operations below must succeed, or we rollback
+
+    // 6. Insert team with payment details
     const { data: team, error: teamError } = await supabase
       .from('teams')
       .insert({
@@ -101,9 +130,11 @@ export async function POST(request: Request) {
         captain_email: captain.email,
         total_amount_payable: registrationFee,
         currency: 'INR',
-        has_paid: false,
-        payment_gateway: 'razorpay',
-        payment_status: 'created',
+        has_paid: registrationFee === 0, // Only mark paid if free event
+        payment_gateway: payment ? 'upi' : (registrationFee === 0 ? 'free' : 'pending'),
+        payment_status: payment ? 'pending_verification' : (registrationFee === 0 ? 'completed' : 'not_required'),
+        transaction_id: payment?.transaction_id || null,
+        account_holder_name: payment?.account_holder_name || null,
         is_active: true,
       })
       .select()
@@ -117,31 +148,32 @@ export async function POST(request: Request) {
       )
     }
 
-    // 6. Insert captain as team member
-    const captainMember = {
-      team_id: team.id,
-      member_name: captain.name,
-      member_email: captain.email,
-      member_contact: captain.contact,
-      role: 'captain' as const,
-      is_active: true,
-    }
+    createdTeamId = team.id
 
+    // 7. Insert captain as team member
     const { error: captainError } = await supabase
       .from('team_members')
-      .insert(captainMember)
+      .insert({
+        team_id: team.id,
+        member_name: captain.name,
+        member_email: captain.email,
+        member_contact: captain.contact,
+        role: 'captain' as const,
+        is_active: true,
+      })
 
     if (captainError) {
       console.error('Error adding captain:', captainError)
       // Rollback: delete team
       await supabase.from('teams').delete().eq('id', team.id)
+      createdTeamId = null
       return NextResponse.json(
-        { error: 'Failed to add captain to team' },
+        { error: 'Failed to add captain to team. Registration cancelled.' },
         { status: 500 }
       )
     }
 
-    // 7. Insert other members if provided
+    // 8. Insert other members if provided
     if (members.length > 0) {
       const teamMembers = members.map(member => ({
         team_id: team.id,
@@ -156,21 +188,45 @@ export async function POST(request: Request) {
 
       if (membersError) {
         console.error('Error adding members:', membersError)
-        // Continue anyway - members can be added later
+        // Rollback: delete team members and team
+        await supabase.from('team_members').delete().eq('team_id', team.id)
+        await supabase.from('teams').delete().eq('id', team.id)
+        createdTeamId = null
+        return NextResponse.json(
+          { error: 'Failed to add team members. Registration cancelled.' },
+          { status: 500 }
+        )
       }
     }
+
+    // === END TRANSACTION-LIKE OPERATIONS ===
+    // Registration complete - email will be sent after payment verification by admin
 
     return NextResponse.json({
       success: true,
       team_id: team.id,
       amount_payable: team.total_amount_payable,
-      message: 'Team registered successfully',
+      payment_status: payment ? 'pending_verification' : (registrationFee === 0 ? 'completed' : 'not_required'),
+      message: payment 
+        ? 'Registration submitted successfully. Your payment is pending verification. You will receive a confirmation email once verified.' 
+        : 'Team registered successfully!',
     }, { status: 201 })
 
   } catch (error) {
     console.error('Unexpected error:', error)
+    
+    // Attempt rollback if team was created
+    if (createdTeamId) {
+      try {
+        await supabase.from('team_members').delete().eq('team_id', createdTeamId)
+        await supabase.from('teams').delete().eq('id', createdTeamId)
+      } catch (rollbackError) {
+        console.error('Rollback failed:', rollbackError)
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error. Please try again.' },
       { status: 500 }
     )
   }

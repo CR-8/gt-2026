@@ -16,10 +16,6 @@ const Sponsors = dynamic(() => import('@/components/blocks/sponsors'), {
   loading: () => <div className="h-64 bg-neutral-900 animate-pulse" />,
   ssr: true
 })
-const FAQ = dynamic(() => import('@/components/blocks/faq'), {
-  loading: () => <div className="h-64 bg-neutral-900 animate-pulse" />,
-  ssr: true
-})
 
 function Page() {
   return (
@@ -27,16 +23,13 @@ function Page() {
       <Hero/>
       <About/>
       <Suspense fallback={<div className="h-96 bg-neutral-900 animate-pulse" />}>
-        <Gallery/>
+        <Events/>
       </Suspense>
       <Suspense fallback={<div className="h-96 bg-neutral-900 animate-pulse" />}>
-        <Events/>
+        <Gallery/>
       </Suspense>
       <Suspense fallback={<div className="h-64 bg-neutral-900 animate-pulse" />}>
         <Sponsors/>
-      </Suspense>
-      <Suspense fallback={<div className="h-64 bg-neutral-900 animate-pulse" />}>
-        <FAQ/>
       </Suspense>
     </div>
   )

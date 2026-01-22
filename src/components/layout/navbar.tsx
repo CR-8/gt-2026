@@ -114,7 +114,7 @@ const Navbar = () => {
     <nav ref={containerRef} className="main-navbar relative text-white">
       {/* Top Navigation Bar */}
       <nav className="fixed top-0 left-0 w-screen flex justify-between items-center p-4 sm:p-6 md:p-8 z-[100] pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent mx-auto">
-        <Link href="/" className="logo pointer-events-auto w-14 h-14 sm:w-18 sm:h-18 cursor-pointer">
+        <Link href="/" className="logo pointer-events-auto w-18 h-18 sm:w-22 sm:h-22 cursor-pointer">
           <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
         </Link>
         
@@ -141,13 +141,8 @@ const Navbar = () => {
         }}
       >
         <div ref={contentRef} className="w-full h-full flex flex-col md:flex-row p-6 sm:p-10 md:p-16 lg:p-20">
-          {/* Left: Media/Image Wrapper */}
-          <div className="hidden lg:flex flex-[1] items-end pb-10 overflow-hidden opacity-50">
-            <img src="/menu-img.jpg" alt="Featured" className="w-2/3 grayscale object-cover aspect-[4/5]" />
-          </div>
-
-          {/* Right: Links Wrapper */}
-          <div className="flex-[2] flex flex-col justify-between pt-20 sm:pt-24 md:pt-0">
+          {/* Links Wrapper */}
+          <div className="flex-1 flex flex-col justify-between pt-20 sm:pt-24 md:pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-10">
               {/* Main Links */}
               <div className="flex flex-col gap-3 sm:gap-4">
@@ -167,15 +162,6 @@ const Navbar = () => {
                     className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300"
                   >
                     About Us
-                  </p>
-                </div>
-                {/* External Links */}
-                <div className="menu-link-item overflow-hidden">
-                  <p 
-                    onClick={() => handleExternalLink('https://learn.roboticsclubsrmcem.in')}
-                    className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300"
-                  >
-                    Learn
                   </p>
                 </div>
 
@@ -199,7 +185,7 @@ const Navbar = () => {
             <div className="menu-footer flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-0 border-t border-[var(--color-primary-cyan)]/20 pt-6 sm:pt-10 text-xs text-[var(--color-text-tertiary)] uppercase tracking-widest">
               <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 md:gap-20">
                 <div><p>Location</p><p className="text-white mt-2">Lucknow, Uttar Pradesh</p><p className="text-white mt-1">India</p></div>
-                <div><p>Inquiries</p><a href="mailto:hello@grobots.com" className="text-white mt-2 hover:text-[var(--color-primary-cyan)] transition-colors block">hello@grobots.com</a></div>
+                <div><p>Inquiries</p><a href="mailto:grobotsclub@gmail.com" className="text-white mt-2 hover:text-[var(--color-primary-cyan)] transition-colors block">grobotsclub@gmail.com</a></div>
               </div>
               <p className="text-[10px] sm:text-xs">© 2026  SRMCEM ROBOTICS CLUB</p>
             </div>

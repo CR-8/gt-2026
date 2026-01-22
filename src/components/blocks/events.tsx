@@ -30,18 +30,6 @@ function Grid() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                 );
-            case 'cultural':
-                return (
-                    <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                );
-            case 'hackathon':
-                return (
-                    <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                );
             default:
                 return (
                     <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -60,8 +48,6 @@ function Grid() {
 
             <div className="mx-4 sm:mx-6 md:mx-8 lg:mx-16 my-8 sm:my-10 md:my-12 max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
                 <span className="text-white">
-                    What to expect at
-                    <br />
                     <span className="text-neutral-500">Our Events</span>
                 </span>
             </div>
@@ -77,7 +63,7 @@ function Grid() {
                         {events.map((event) => (
                             <EventCard 
                                 key={event.slug}
-                                category={`FOR ${event.category.toUpperCase()} ENTHUSIASTS`}
+                                category={`FOR ENTHUSIASTS`}
                                 title={event.title}
                                 description={event.shortDescription}
                                 icon={getIcon(event.category)}

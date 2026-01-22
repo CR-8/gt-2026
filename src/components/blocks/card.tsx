@@ -30,7 +30,7 @@ function EventCard({
                     </span>
                 </div>
             )}
-            
+
             {/* Content Container */}
             <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
                 {/* Icon */}
@@ -39,12 +39,12 @@ function EventCard({
                         {icon}
                     </div>
                 )}
-                
+
                 {/* Title */}
                 <h3 className="text-2xl sm:text-2xl md:text-3xl font-normal text-white leading-tight">
                     {title}
                 </h3>
-                
+
                 {/* Description */}
                 <p className="text-sm sm:text-base text-neutral-400 leading-relaxed">
                     {description}

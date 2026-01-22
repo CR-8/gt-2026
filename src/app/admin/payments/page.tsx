@@ -45,8 +45,9 @@ interface Payment {
   total_amount_payable: number
   payment_gateway: string | null
   payment_order_id: string | null
-  razorpay_payment_id: string | null
   payment_status: string
+  transaction_id: string | null
+  account_holder_name: string | null
   created_at: string
   event: {
     name: string
@@ -114,8 +115,9 @@ export default function PaymentsPage() {
         total_amount_payable: team.total_amount_payable,
         payment_gateway: team.payment_gateway,
         payment_order_id: team.payment_order_id,
-        razorpay_payment_id: team.razorpay_payment_id,
         payment_status: team.payment_status || 'created',
+        transaction_id: team.transaction_id,
+        account_holder_name: team.account_holder_name,
         created_at: team.created_at,
         event: team.events ? {
           name: team.events.name,
@@ -192,6 +194,26 @@ export default function PaymentsPage() {
     }))
   }, [filteredPayments])
 
+  const verifyPayment = async (paymentId: string) => {
+    try {
+      const res = await fetch(`/api/admin/teams/${paymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          has_paid: true,
+          payment_status: 'completed'
+        })
+      })
+      
+      if (res.ok) {
+        fetchPayments(true)
+        setSelectedPayment(null)
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error)
+    }
+  }
+
   const markAsPaid = async (paymentId: string) => {
     try {
       const res = await fetch(`/api/admin/teams/${paymentId}`, {
@@ -199,7 +221,8 @@ export default function PaymentsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           has_paid: true,
-          payment_gateway: 'cash'
+          payment_gateway: 'cash',
+          payment_status: 'completed'
         })
       })
       
@@ -338,8 +361,8 @@ export default function PaymentsPage() {
                     </td>
                     <td className="p-4">
                       <StatusBadge 
-                        status={payment.has_paid ? 'Paid' : 'Pending'} 
-                        type={payment.has_paid ? 'success' : 'warning'} 
+                        status={payment.has_paid ? 'Paid' : payment.payment_status === 'pending_verification' ? 'Pending Verification' : 'Pending'} 
+                        type={payment.has_paid ? 'success' : payment.payment_status === 'pending_verification' ? 'info' : 'warning'} 
                       />
                     </td>
                     <td className="p-4">
@@ -408,8 +431,8 @@ export default function PaymentsPage() {
                   <p className="text-sm text-zinc-400">{payment.event?.name || 'No event'}</p>
                 </div>
                 <StatusBadge 
-                  status={payment.has_paid ? 'Paid' : 'Pending'} 
-                  type={payment.has_paid ? 'success' : 'warning'} 
+                  status={payment.has_paid ? 'Paid' : payment.payment_status === 'pending_verification' ? 'Pending Verification' : 'Pending'} 
+                  type={payment.has_paid ? 'success' : payment.payment_status === 'pending_verification' ? 'info' : 'warning'} 
                 />
               </div>
 
@@ -509,15 +532,27 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              {/* Quick Action */}
+              {/* Quick Actions */}
               {!selectedPayment.has_paid && (
-                <Button
-                  onClick={() => markAsPaid(selectedPayment.id)}
-                  className="w-full bg-green-600 hover:bg-green-700 h-10 sm:h-11"
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Mark as Paid (Cash)
-                </Button>
+                <div className="flex flex-col gap-2">
+                  {selectedPayment.payment_status === 'pending_verification' && selectedPayment.transaction_id && (
+                    <Button
+                      onClick={() => verifyPayment(selectedPayment.id)}
+                      className="w-full bg-green-600 hover:bg-green-700 h-10 sm:h-11"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Verify Payment
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => markAsPaid(selectedPayment.id)}
+                    variant="outline"
+                    className="w-full border-zinc-700 h-10 sm:h-11"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Mark as Paid (Cash/Manual)
+                  </Button>
+                </div>
               )}
 
               {/* Team Info */}
@@ -562,23 +597,29 @@ export default function PaymentsPage() {
                     value={selectedPayment.payment_gateway || 'Not specified'} 
                   />
                 </div>
+                {selectedPayment.transaction_id && (
+                  <DetailItem 
+                    label="Transaction ID / UTR" 
+                    value={selectedPayment.transaction_id}
+                    copyable
+                    onCopy={() => copyToClipboard(selectedPayment.transaction_id!, 'txnId')}
+                    copied={copied === 'txnId'}
+                    mono
+                  />
+                )}
+                {selectedPayment.account_holder_name && (
+                  <DetailItem 
+                    label="Account Holder Name" 
+                    value={selectedPayment.account_holder_name}
+                  />
+                )}
                 {selectedPayment.payment_order_id && (
                   <DetailItem 
-                    label="Razorpay Order ID" 
+                    label="Order ID" 
                     value={selectedPayment.payment_order_id}
                     copyable
                     onCopy={() => copyToClipboard(selectedPayment.payment_order_id!, 'orderId')}
                     copied={copied === 'orderId'}
-                    mono
-                  />
-                )}
-                {selectedPayment.razorpay_payment_id && (
-                  <DetailItem 
-                    label="Razorpay Payment ID" 
-                    value={selectedPayment.razorpay_payment_id}
-                    copyable
-                    onCopy={() => copyToClipboard(selectedPayment.razorpay_payment_id!, 'rpayId')}
-                    copied={copied === 'rpayId'}
                     mono
                   />
                 )}
@@ -598,17 +639,7 @@ export default function PaymentsPage() {
                   <Edit2 className="w-4 h-4 mr-2" />
                   Edit Team
                 </Button>
-                {selectedPayment.razorpay_payment_id && (
-                  <a
-                    href={`https://dashboard.razorpay.com/app/payments/${selectedPayment.razorpay_payment_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 text-sm text-orange-500 hover:text-orange-400 py-2 px-3 rounded-md hover:bg-orange-500/10 transition-colors w-full sm:w-auto"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View in Razorpay
-                  </a>
-                )}
+
               </div>
             </div>
           )}

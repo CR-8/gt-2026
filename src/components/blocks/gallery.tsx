@@ -8,12 +8,7 @@ function Gallery() {
         {
             id: "1",
             img: "/images/g-1.jpg",
-            height: 400,
-        },
-        {
-            id: "2",
-            img: "/images/g-2.jpg",
-            height: 650,
+            height: 500,
         },
         {
             id: "3",
@@ -28,18 +23,9 @@ function Gallery() {
         {
             id: "5",
             img: "/images/g-5.jpg",
-            height: 450,
-        },
-        {
-            id: "6",
-            img: "/images/g-6.jpg",
-            height: 300,
-        },
-        {
-            id: "7",
-            img: "/images/g-7.jpg",
             height: 500,
         },
+
         {
             id: "8",
             img: "/images/g-8.jpg",
@@ -48,7 +34,7 @@ function Gallery() {
         {
             id: "9",
             img: "/images/g-9.jpg",
-            height: 400,
+            height: 450,
         },
         {
             id: "10",
@@ -68,7 +54,7 @@ function Gallery() {
         {
             id: "13",
             img: "/images/g-13.jpg",
-            height: 480,
+            height: 520,
         },
         {
             id: "14",
@@ -78,12 +64,12 @@ function Gallery() {
         {
             id: "15",
             img: "/images/g-15.jpeg",
-            height: 390,
+            height: 450,
         },
         {
             id: "16",
             img: "/images/g-16.jpg",
-            height: 390,
+            height: 420,
         },
     ];
 
@@ -94,16 +80,15 @@ function Gallery() {
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-10"></div>
 
       {/* Header Section */}
-      <div className="relative z-20 mx-4 sm:mx-6 md:mx-8 lg:mx-16 mb-12 sm:mb-16 md:mb-20">
-        <div className="flex items-center justify-start gap-4 sm:gap-6 mb-8 sm:mb-10 md:mb-12">
+      <div className="relative z-20 mx-4 sm:mx-6 md:mx-8 lg:mx-16 mb-8 sm:mb-10 md:mb-12">
+        <div className="flex items-center justify-start gap-4 sm:gap-6 mb-6 sm:mb-8">
           <span className="bg-neutral-300 h-1 w-8 sm:w-12"></span>
-          <span className="text-white text-lg sm:text-xl md:text-2xl tracking-tight">Gallery</span>
+          <span className="text-white text-base sm:text-lg md:text-xl tracking-tight">Gallery</span>
         </div>
 
-        <div className="max-w-5xl">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter leading-tight">
+        <div className="max-w-4xl">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter leading-tight text-justify">
             <span className="text-white">Moments from our </span>
-            <br className="hidden sm:block" />
             <span className="text-neutral-500">Past Events</span>
           </h2>
         </div>

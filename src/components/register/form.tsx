@@ -1,17 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import QRCode from 'qrcode';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { XIcon, CheckCircle2, AlertCircle, Plus, X, ArrowLeft, ArrowRight, Users } from 'lucide-react';
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+import { XIcon, CheckCircle2, AlertCircle, Plus, X, ArrowLeft, ArrowRight, Users, QrCode as QrCodeIcon, Copy, Check } from 'lucide-react';
 
 interface RegistrationFormProps {
   eventId: string;
@@ -37,19 +31,30 @@ export function RegistrationForm({
   teamSize,
   onClose,
 }: RegistrationFormProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   // Multi-step state (1=Details, 2=Members, 3=Payment)
   const [step, setStep] = useState<1 | 2 | 3>(1);
   
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [submitMessage, setSubmitMessage] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // Lock body scroll when modal is open
   useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = originalStyle;
     };
   }, []);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [step]);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -59,6 +64,12 @@ export function RegistrationForm({
     leaderPhone: '',
     college: '',
   });
+
+  // Payment data
+  const [paymentData, setPaymentData] = useState({
+    transactionId: '',
+    accountHolderName: '',
+  });
   
   // Team members
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -67,23 +78,51 @@ export function RegistrationForm({
   const maxTeamSize = parseInt(teamSize.split('-')[1]) || parseInt(teamSize) || 4;
   const minTeamSize = parseInt(teamSize.split('-')[0]) || 1;
 
-  // Parse participation fee (remove ₹ and any non-numeric chars except decimal)
-  const baseFee = parseFloat(participationFee.replace(/[^0-9.]/g, '')) || 0;
-  
-  // Razorpay fee calculation:
-  // - Razorpay charges 2% commission
-  // - 18% GST on that commission (0.18 × 2% = 0.36%)
-  // - Total gateway fee = 2% + 0.36% = 2.36%
-  const razorpayFeeRate = 0.0236; // ~2.36%
+  // Parse participation fee
+  const registrationFee = parseFloat(participationFee.replace(/[^0-9.]/g, '')) || 0;
 
-  // Calculate totals
-  const calculateTotals = () => {
-    const gatewayFee = baseFee * razorpayFeeRate;
-    const final = baseFee + gatewayFee;
-    return { baseFee, gatewayFee, final };
+  // UPI Configuration
+  const upiId = process.env.NEXT_PUBLIC_UPI_ID || "grobotsclub@upi";
+  const upiPayeeName = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME || "Grobots Club";
+
+  // QR Code state
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [qrLoading, setQrLoading] = useState(false);
+
+  // Generate UPI QR code when reaching payment step
+  useEffect(() => {
+    if (step === 3 && registrationFee > 0) {
+      generateUpiQrCode();
+    }
+  }, [step, registrationFee]);
+
+  const generateUpiQrCode = async () => {
+    setQrLoading(true);
+    try {
+      const transactionNote = `Gantavya-${eventTitle.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)}`;
+      const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiPayeeName)}&am=${registrationFee.toFixed(2)}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+      
+      const qrDataUrl = await QRCode.toDataURL(upiUrl, {
+        width: 256,
+        margin: 2,
+        color: { dark: '#000000', light: '#FFFFFF' },
+      });
+      
+      setQrCodeDataUrl(qrDataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    } finally {
+      setQrLoading(false);
+    }
   };
 
-  // Validation for step 1
+  const copyUpiId = () => {
+    navigator.clipboard.writeText(upiId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Validations
   const validateStep1 = () => {
     if (!formData.teamName || formData.teamName.length < 3) {
       setSubmitStatus('error');
@@ -112,19 +151,15 @@ export function RegistrationForm({
       setSubmitMessage('College name is required');
       return false;
     }
-    
     return true;
   };
 
-  // Validation for step 2 (team members)
   const validateStep2 = () => {
-    // Validate each member that has been added
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[0-9]{10}$/;
     
     for (let i = 0; i < members.length; i++) {
       const member = members[i];
-      // Only validate if member has any data entered
       if (member.name || member.email || member.phone) {
         if (!member.name || member.name.length < 2) {
           setSubmitStatus('error');
@@ -144,7 +179,6 @@ export function RegistrationForm({
       }
     }
     
-    // Check for duplicate emails
     const validMembers = members.filter(m => m.email);
     const emails = [formData.leaderEmail, ...validMembers.map(m => m.email)];
     const uniqueEmails = new Set(emails);
@@ -153,24 +187,31 @@ export function RegistrationForm({
       setSubmitMessage('Each team member must have a unique email address');
       return false;
     }
-    
     return true;
   };
 
-  // Handle next step
+  const validateStep3 = () => {
+    if (registrationFee > 0) {
+      if (!paymentData.transactionId || paymentData.transactionId.length < 6) {
+        setSubmitStatus('error');
+        setSubmitMessage('Please enter a valid transaction ID (at least 6 characters)');
+        return false;
+      }
+      if (!paymentData.accountHolderName || paymentData.accountHolderName.length < 2) {
+        setSubmitStatus('error');
+        setSubmitMessage('Please enter the account holder name');
+        return false;
+      }
+    }
+    return true;
+  };
+
   const goToNextStep = () => {
     setSubmitStatus('idle');
     setSubmitMessage('');
     
-    if (step === 1) {
-      if (validateStep1()) {
-        setStep(2);
-      }
-    } else if (step === 2) {
-      if (validateStep2()) {
-        setStep(3);
-      }
-    }
+    if (step === 1 && validateStep1()) setStep(2);
+    else if (step === 2 && validateStep2()) setStep(3);
   };
 
   const goToPrevStep = () => {
@@ -179,7 +220,6 @@ export function RegistrationForm({
     if (step > 1) setStep((s) => (s - 1) as 1 | 2 | 3);
   };
 
-  // Add/remove members
   const addMember = () => {
     if (members.length < maxTeamSize - 1) {
       setMembers([...members, { name: '', email: '', phone: '', college: formData.college }]);
@@ -196,13 +236,13 @@ export function RegistrationForm({
     setMembers(updated);
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
+    if (!validateStep3()) return;
+
     try {
       setSubmitStatus('processing');
-      setSubmitMessage('Creating your registration...');
+      setSubmitMessage('Submitting your registration...');
 
-      // Register for the event
       const registerResponse = await fetch('/api/teams/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -220,6 +260,11 @@ export function RegistrationForm({
             member_email: m.email,
             member_contact: m.phone,
           })),
+          payment: registrationFee > 0 ? {
+            transaction_id: paymentData.transactionId,
+            account_holder_name: paymentData.accountHolderName,
+            amount: registrationFee,
+          } : null,
         }),
       });
 
@@ -228,56 +273,14 @@ export function RegistrationForm({
         throw new Error(error.error || 'Registration failed');
       }
 
-      const { team_id } = await registerResponse.json();
-
-      // Create Razorpay order
-      setSubmitMessage('Preparing payment...');
-      const orderResponse = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_id }),
-      });
-
-      if (!orderResponse.ok) {
-        throw new Error('Failed to create payment order');
-      }
-
-      const { order_id, amount, currency, key_id } = await orderResponse.json();
-
-      // Initialize Razorpay
-      const options = {
-        key: key_id,
-        amount: amount,
-        currency: currency,
-        name: 'Gantavya 2026',
-        description: `Registration for ${eventTitle}`,
-        order_id: order_id,
-        handler: function () {
-          setSubmitStatus('success');
-          setSubmitMessage('Payment successful! Registration complete. You will receive a confirmation email shortly.');
-          
-          setTimeout(() => {
-            onClose();
-          }, 3000);
-        },
-        prefill: {
-          name: formData.leaderName,
-          email: formData.leaderEmail,
-          contact: formData.leaderPhone,
-        },
-        theme: {
-          color: '#ea580c',
-        },
-        modal: {
-          ondismiss: function() {
-            setSubmitStatus('error');
-            setSubmitMessage('Payment cancelled. Your registration is saved but payment is pending.');
-          }
-        }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      setSubmitStatus('success');
+      setSubmitMessage(
+        registrationFee > 0 
+          ? 'Registration submitted! Your payment is pending verification. You will receive a confirmation email once verified.' 
+          : 'Registration successful! You will receive a confirmation email shortly.'
+      );
+      
+      setTimeout(() => onClose(), 4000);
 
     } catch (error: any) {
       setSubmitStatus('error');
@@ -286,55 +289,82 @@ export function RegistrationForm({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPaymentData({ ...paymentData, [e.target.name]: e.target.value });
+  };
+
+  // Prevent scroll propagation
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-neutral-900 rounded-2xl border border-neutral-800 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex-shrink-0 border-b border-neutral-800 p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Register for {eventTitle}</h2>
-              <p className="text-sm text-neutral-400">
-                Fill in the details below to register your team
-              </p>
+    <div 
+      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+      style={{ touchAction: 'none' }}
+    >
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div 
+          className="relative w-full max-w-2xl bg-neutral-900 rounded-2xl border border-neutral-800 shadow-2xl flex flex-col"
+          style={{ 
+            maxHeight: 'min(90vh, 800px)',
+            height: 'auto'
+          }}
+        >
+          {/* Fixed Header */}
+          <div className="flex-none border-b border-neutral-800 p-4 sm:p-6 bg-neutral-900 rounded-t-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xl sm:text-2xl font-bold text-white truncate">Register for {eventTitle}</h2>
+                <p className="text-sm text-neutral-400 mt-1">Fill in the details below</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="flex-none p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <XIcon className="w-5 h-5 text-neutral-400" />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
-              aria-label="Close"
-            >
-              <XIcon className="w-5 h-5 text-neutral-400" />
-            </button>
+            
+            {/* Step Indicator */}
+            <div className="flex items-center gap-2 mt-4 overflow-x-auto">
+              <div className={`flex-none px-3 py-1 rounded-full text-xs sm:text-sm whitespace-nowrap ${step === 1 ? 'bg-orange-600 text-white' : step > 1 ? 'bg-green-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>
+                1. Details
+              </div>
+              <div className={`flex-none px-3 py-1 rounded-full text-xs sm:text-sm whitespace-nowrap ${step === 2 ? 'bg-orange-600 text-white' : step > 2 ? 'bg-green-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>
+                2. Members
+              </div>
+              <div className={`flex-none px-3 py-1 rounded-full text-xs sm:text-sm whitespace-nowrap ${step === 3 ? 'bg-orange-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>
+                3. Payment
+              </div>
+            </div>
           </div>
-          
-          {/* Step Indicator */}
-          <div className="flex items-center gap-2 mt-4 flex-wrap">
-            <div className={`px-3 py-1 rounded-full text-sm ${step === 1 ? 'bg-orange-600 text-white' : step > 1 ? 'bg-green-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>
-              1. Details
-            </div>
-            <div className={`px-3 py-1 rounded-full text-sm ${step === 2 ? 'bg-orange-600 text-white' : step > 2 ? 'bg-green-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>
-              2. Members
-            </div>
-            <div className={`px-3 py-1 rounded-full text-sm ${step === 3 ? 'bg-orange-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>
-              3. Payment
-            </div>
-          </div>
-        </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-6">
-              {/* Success/Error Messages */}
+          {/* Scrollable Content */}
+          <div 
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+            onWheel={handleWheel}
+            onTouchMove={handleTouchMove}
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#525252 transparent'
+            }}
+          >
+            <div className="p-4 sm:p-6">
+              {/* Status Messages */}
               {submitStatus === 'success' && (
                 <div className="mb-6 p-4 bg-green-900/30 border border-green-700 rounded-lg flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-green-400 flex-none mt-0.5" />
                   <div>
                     <h3 className="font-semibold text-green-300">Registration Successful!</h3>
                     <p className="text-sm text-green-200 mt-1">{submitMessage}</p>
@@ -344,7 +374,7 @@ export function RegistrationForm({
 
               {submitStatus === 'error' && (
                 <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-none mt-0.5" />
                   <div>
                     <h3 className="font-semibold text-red-300">Error</h3>
                     <p className="text-sm text-red-200 mt-1">{submitMessage}</p>
@@ -352,10 +382,9 @@ export function RegistrationForm({
                 </div>
               )}
 
-              {/* Step 1: Basic Details */}
+              {/* Step 1: Details */}
               {step === 1 && (
-                <div className="space-y-6">
-                  {/* Event Info */}
+                <div className="space-y-5">
                   <div className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
@@ -369,7 +398,6 @@ export function RegistrationForm({
                     </div>
                   </div>
 
-                  {/* Team Name */}
                   <div className="space-y-2">
                     <Label htmlFor="teamName" className="text-sm font-medium text-white">
                       Team Name <span className="text-red-500">*</span>
@@ -384,13 +412,12 @@ export function RegistrationForm({
                     />
                   </div>
 
-                  {/* Team Leader Details */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-white border-b border-neutral-800 pb-2">
                       Team Leader Details
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="leaderName" className="text-sm font-medium text-white">
                           Full Name <span className="text-red-500">*</span>
@@ -454,252 +481,277 @@ export function RegistrationForm({
 
               {/* Step 2: Team Members */}
               {step === 2 && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
                     <div className="p-2 bg-orange-600/20 rounded-lg">
                       <Users className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-white">Add Team Members</h3>
-                      <p className="text-sm text-neutral-400">
-                        Add your teammates (Team size: {minTeamSize}-{maxTeamSize})
-                      </p>
+                      <p className="text-sm text-neutral-400">Team size: {minTeamSize}-{maxTeamSize}</p>
                     </div>
                   </div>
                   
-                  {/* Leader Info Card */}
+                  {/* Leader Card */}
                   <div className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="px-2 py-0.5 bg-orange-600 text-white text-xs rounded-full">Captain</span>
                     </div>
-                    <div className="text-sm">
-                      <p className="text-white font-medium">{formData.leaderName}</p>
-                      <p className="text-neutral-400">{formData.leaderEmail} • {formData.leaderPhone}</p>
-                      <p className="text-neutral-500">{formData.college}</p>
-                    </div>
+                    <p className="text-white font-medium">{formData.leaderName}</p>
+                    <p className="text-sm text-neutral-400">{formData.leaderEmail}</p>
                   </div>
 
-                  {/* Add Members Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-300">
-                        Team Members: {members.length + 1}/{maxTeamSize}
-                      </span>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={addMember}
-                        disabled={members.length >= maxTeamSize - 1}
-                        className="border-orange-600 text-orange-500 hover:bg-orange-600/10"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add Member
-                      </Button>
-                    </div>
-                    
-                    {members.length === 0 ? (
-                      <div className="p-8 border-2 border-dashed border-neutral-700 rounded-lg text-center">
-                        <Users className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
-                        <p className="text-neutral-400 text-sm">No team members added yet</p>
-                        <p className="text-neutral-500 text-xs mt-1">
-                          {minTeamSize > 1 
-                            ? `You need at least ${minTeamSize - 1} more member(s)` 
-                            : 'You can continue without adding members'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {members.map((member, index) => (
-                          <div key={index} className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700">
-                            <div className="flex justify-between items-center mb-3">
-                              <span className="text-sm font-medium text-neutral-300">Member {index + 1}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeMember(index)}
-                                className="p-1 hover:bg-neutral-700 rounded text-red-400 hover:text-red-300"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="space-y-1">
-                                <Label className="text-xs text-neutral-500">Name *</Label>
-                                <Input
-                                  placeholder="Full Name"
-                                  value={member.name}
-                                  onChange={(e) => updateMember(index, 'name', e.target.value)}
-                                  className="bg-neutral-800 border-neutral-700 text-white text-sm"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-neutral-500">Email *</Label>
-                                <Input
-                                  placeholder="email@example.com"
-                                  type="email"
-                                  value={member.email}
-                                  onChange={(e) => updateMember(index, 'email', e.target.value)}
-                                  className="bg-neutral-800 border-neutral-700 text-white text-sm"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-neutral-500">Phone *</Label>
-                                <Input
-                                  placeholder="10-digit number"
-                                  value={member.phone}
-                                  onChange={(e) => updateMember(index, 'phone', e.target.value)}
-                                  className="bg-neutral-800 border-neutral-700 text-white text-sm"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-neutral-500">College</Label>
-                                <Input
-                                  placeholder="College/Institution"
-                                  value={member.college}
-                                  onChange={(e) => updateMember(index, 'college', e.target.value)}
-                                  className="bg-neutral-800 border-neutral-700 text-white text-sm"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {members.length < maxTeamSize - 1 && (
-                      <p className="text-xs text-neutral-500">
-                        You can add up to {maxTeamSize - 1 - members.length} more member(s).
-                      </p>
-                    )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-neutral-300">Members: {members.length + 1}/{maxTeamSize}</span>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addMember}
+                      disabled={members.length >= maxTeamSize - 1}
+                      className="border-orange-600 text-orange-500 hover:bg-orange-600/10"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Member
+                    </Button>
                   </div>
+                  
+                  {members.length === 0 ? (
+                    <div className="p-6 border-2 border-dashed border-neutral-700 rounded-lg text-center">
+                      <Users className="w-10 h-10 text-neutral-600 mx-auto mb-2" />
+                      <p className="text-neutral-400 text-sm">No team members added</p>
+                      <p className="text-neutral-500 text-xs mt-1">
+                        {minTeamSize > 1 ? `Add at least ${minTeamSize - 1} member(s)` : 'Members are optional'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {members.map((member, index) => (
+                        <div key={index} className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-sm font-medium text-neutral-300">Member {index + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeMember(index)}
+                              className="p-1 hover:bg-neutral-700 rounded text-red-400"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Input
+                              placeholder="Full Name *"
+                              value={member.name}
+                              onChange={(e) => updateMember(index, 'name', e.target.value)}
+                              className="bg-neutral-800 border-neutral-700 text-white text-sm"
+                            />
+                            <Input
+                              placeholder="Email *"
+                              type="email"
+                              value={member.email}
+                              onChange={(e) => updateMember(index, 'email', e.target.value)}
+                              className="bg-neutral-800 border-neutral-700 text-white text-sm"
+                            />
+                            <Input
+                              placeholder="Phone (10 digits) *"
+                              value={member.phone}
+                              onChange={(e) => updateMember(index, 'phone', e.target.value)}
+                              className="bg-neutral-800 border-neutral-700 text-white text-sm"
+                            />
+                            <Input
+                              placeholder="College"
+                              value={member.college}
+                              onChange={(e) => updateMember(index, 'college', e.target.value)}
+                              className="bg-neutral-800 border-neutral-700 text-white text-sm"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Step 3: Payment Summary */}
+              {/* Step 3: Payment */}
               {step === 3 && (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <h3 className="text-lg font-semibold text-white">Payment & Confirmation</h3>
                   
-                  {/* Summary Card */}
+                  {/* Summary */}
                   <div className="p-4 bg-neutral-800 rounded-lg border border-neutral-700">
-                    <h4 className="font-medium text-white mb-3">Registration Summary</h4>
-                    
-                    <div className="space-y-2 text-sm text-neutral-300">
+                    <h4 className="font-medium text-white mb-3">Summary</h4>
+                    <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Team Name:</span>
-                        <span className="text-white font-medium">{formData.teamName}</span>
+                        <span className="text-neutral-400">Team:</span>
+                        <span className="text-white">{formData.teamName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Leader:</span>
+                        <span className="text-neutral-400">Leader:</span>
                         <span className="text-white">{formData.leaderName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Email:</span>
-                        <span className="text-white">{formData.leaderEmail}</span>
+                        <span className="text-neutral-400">Event:</span>
+                        <span className="text-white">{eventTitle}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>College:</span>
-                        <span className="text-white">{formData.college}</span>
+                        <span className="text-neutral-400">Members:</span>
+                        <span className="text-white">{members.filter(m => m.name).length + 1}</span>
                       </div>
-                      {members.filter(m => m.name && m.email && m.phone).length > 0 && (
-                        <div className="flex justify-between">
-                          <span>Team Members:</span>
-                          <span className="text-white">{members.filter(m => m.name && m.email && m.phone).length}</span>
+                    </div>
+                    <div className="border-t border-neutral-700 mt-3 pt-3">
+                      <div className="flex justify-between text-lg font-semibold">
+                        <span className="text-white">Total:</span>
+                        <span className="text-orange-500">₹{registrationFee.toFixed(0)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {registrationFee > 0 ? (
+                    <>
+                      {/* QR Code */}
+                      <div className="p-5 bg-neutral-800 rounded-lg border border-neutral-700">
+                        <div className="flex items-center gap-2 mb-4">
+                          <QrCodeIcon className="w-5 h-5 text-orange-500" />
+                          <h4 className="font-medium text-white">Scan to Pay</h4>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="border-t border-neutral-700 mt-4 pt-4">
-                      <h5 className="text-sm font-medium text-white mb-2">Event:</h5>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-neutral-300">{eventTitle}</span>
-                        <span className="text-white">{participationFee}</span>
+                        
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="bg-white p-3 rounded-xl">
+                            {qrLoading ? (
+                              <div className="w-44 h-44 flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                              </div>
+                            ) : qrCodeDataUrl ? (
+                              <img src={qrCodeDataUrl} alt="Payment QR" className="w-44 h-44" />
+                            ) : (
+                              <div className="w-44 h-44 flex items-center justify-center bg-neutral-100">
+                                <QrCodeIcon className="w-12 h-12 text-neutral-400" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="w-full p-3 bg-green-900/30 border border-green-700/50 rounded-lg text-center">
+                            <p className="text-green-300 font-semibold">Amount: ₹{registrationFee.toFixed(0)}</p>
+                            <p className="text-green-400 text-xs mt-1">Pre-filled in UPI app</p>
+                          </div>
+                          
+                          <div className="text-center">
+                            <p className="text-sm text-neutral-400 mb-2">Or pay manually:</p>
+                            <div className="flex items-center gap-2 justify-center">
+                              <code className="px-3 py-1.5 bg-neutral-700 rounded-lg text-white font-mono text-sm">
+                                {upiId}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={copyUpiId}
+                                className="p-2 hover:bg-neutral-700 rounded-lg"
+                              >
+                                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-neutral-400" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Totals */}
-                    <div className="border-t border-neutral-700 mt-4 pt-4 space-y-2 text-sm">
-                      {(() => {
-                        const totals = calculateTotals();
-                        return (
-                          <>
-                            <div className="flex justify-between text-neutral-300">
-                              <span>Registration Fee:</span>
-                              <span>₹{totals.baseFee.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-neutral-300">
-                              <span>Payment Gateway Fee (~2.36%)*:</span>
-                              <span>₹{totals.gatewayFee.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-white font-semibold text-base pt-2 border-t border-neutral-700">
-                              <span>Total Payable:</span>
-                              <span>₹{totals.final.toFixed(2)}</span>
-                            </div>
-                            <p className="text-xs text-neutral-500 pt-2">
-                              *Razorpay charges 2% + 18% GST on commission
-                            </p>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
+                      {/* Payment Details */}
+                      <div className="p-4 bg-neutral-800 rounded-lg border border-neutral-700 space-y-4">
+                        <h4 className="font-medium text-white">After Payment, Enter:</h4>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="transactionId" className="text-sm text-white">
+                            Transaction ID / UTR <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="transactionId"
+                            name="transactionId"
+                            value={paymentData.transactionId}
+                            onChange={handlePaymentChange}
+                            placeholder="e.g., 123456789012"
+                            className="bg-neutral-700 border-neutral-600 text-white"
+                          />
+                        </div>
 
-                  {/* Info Note */}
-                  <div className="p-4 bg-orange-900/20 border border-orange-700/50 rounded-lg">
-                    <p className="text-sm text-orange-200">
-                      <strong>Note:</strong> After clicking &quot;Pay &amp; Register&quot;, you&apos;ll be redirected to Razorpay to complete payment securely. A confirmation email will be sent upon successful payment.
-                    </p>
-                  </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="accountHolderName" className="text-sm text-white">
+                            Account Holder Name <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="accountHolderName"
+                            name="accountHolderName"
+                            value={paymentData.accountHolderName}
+                            onChange={handlePaymentChange}
+                            placeholder="Name on bank account"
+                            className="bg-neutral-700 border-neutral-600 text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+                        <p className="text-sm text-blue-200">
+                          <strong>Note:</strong> Payment verification takes up to 24 hours.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-4 bg-green-900/20 border border-green-700/50 rounded-lg">
+                      <p className="text-sm text-green-200">
+                        <strong>Free Event!</strong> Click below to complete registration.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
+              
+              {/* Bottom padding for scroll */}
+              <div className="h-4"></div>
             </div>
-          </ScrollArea>
-        </div>
+          </div>
 
-        {/* Fixed Footer */}
-        <div className="flex-shrink-0 border-t border-neutral-800 p-6">
-          <div className="flex gap-3">
-            {step > 1 ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={goToPrevStep}
-                className="flex-1"
-                disabled={submitStatus === 'processing'}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            )}
-            
-            {step < 3 ? (
-              <Button
-                type="button"
-                onClick={goToNextStep}
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
-              >
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
-                disabled={submitStatus === 'success' || submitStatus === 'processing'}
-              >
-                {submitStatus === 'processing' ? 'Processing...' : submitStatus === 'success' ? 'Registered!' : 'Pay & Register'}
-              </Button>
-            )}
+          {/* Fixed Footer */}
+          <div className="flex-none border-t border-neutral-800 p-4 sm:p-6 bg-neutral-900 rounded-b-2xl">
+            <div className="flex gap-3">
+              {step > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goToPrevStep}
+                  className="flex-1"
+                  disabled={submitStatus === 'processing'}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              )}
+              
+              {step < 3 ? (
+                <Button
+                  type="button"
+                  onClick={goToNextStep}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                >
+                  Continue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  disabled={submitStatus === 'success' || submitStatus === 'processing'}
+                >
+                  {submitStatus === 'processing' ? 'Submitting...' : submitStatus === 'success' ? 'Done!' : 'Complete Registration'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
