@@ -113,6 +113,28 @@ export interface PassData {
   teamName: string;      // e.g., "RoboWarriors"
   eventName: string;     // e.g., "Robo Race"
   collegeName: string;   // e.g., "XYZ Engineering College"
+  captainName?: string;  // e.g., "John Doe"
+  captainEmail?: string; // e.g., "john@example.com"
+  captainPhone?: string; // e.g., "9876543210"
+  paymentStatus?: string; // e.g., "PAID"
+}
+
+/**
+ * Create a compact barcode string with team data
+ * Format: ID|Team|Captain|Email|Phone|Event|Status
+ * Max ~80 chars for Code128 readability
+ */
+function createBarcodeData(data: PassData): string {
+  const parts = [
+    data.teamId,
+    (data.teamName || '').slice(0, 15),      // Limit team name
+    (data.captainName || '').slice(0, 12),   // Limit captain name
+    (data.captainEmail || '').slice(0, 20),  // Limit email
+    (data.captainPhone || '').slice(0, 10),  // Phone number
+    (data.eventName || '').slice(0, 10),     // Limit event name
+    data.paymentStatus || 'PAID',
+  ];
+  return parts.join('|');
 }
 
 /**
@@ -246,9 +268,10 @@ export async function generateEventPass(data: PassData): Promise<Buffer> {
     TEXT_POSITIONS.teamIdVertical.rotation
   );
   
-  // Generate and draw barcode
+  // Generate and draw barcode with full team data
   try {
-    const barcodeBuffer = await generateBarcode(data.teamId);
+    const barcodeData = createBarcodeData(data);
+    const barcodeBuffer = await generateBarcode(barcodeData);
     const barcodeImage = await loadImage(barcodeBuffer);
     
     // Draw rotated barcode

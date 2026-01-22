@@ -125,7 +125,7 @@ export async function PATCH(
           .select('*', { count: 'exact', head: true })
           .eq('team_id', currentTeam.id)
 
-        // Generate the event pass
+        // Generate the event pass with full team data for barcode
         let passBase64: string | null = null
         try {
           passBase64 = await generateEventPassBase64({
@@ -133,6 +133,10 @@ export async function PATCH(
             teamName: currentTeam.team_name,
             eventName: eventName,
             collegeName: currentTeam.college_name || 'N/A',
+            captainName: currentTeam.captain_name,
+            captainEmail: currentTeam.captain_email,
+            captainPhone: currentTeam.captain_phone,
+            paymentStatus: 'PAID',
           })
         } catch (passError) {
           console.error('Error generating event pass:', passError)
