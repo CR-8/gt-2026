@@ -17,21 +17,29 @@ function ensureFontsRegistered() {
   if (fontsRegistered) return;
   
   try {
-    // Try to register a system font that's commonly available
-    // On Vercel/Linux, DejaVu Sans is typically available
-    const fontPaths = [
-      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-      'C:\\Windows\\Fonts\\arial.ttf',
-      'C:\\Windows\\Fonts\\arialbd.ttf',
-    ];
+    // Use bundled Inter font from public/font directory
+    const interFontPath = path.join(process.cwd(), 'public', 'font', 'Inter.ttf');
     
-    for (const fontPath of fontPaths) {
-      if (fs.existsSync(fontPath)) {
-        if (fontPath.includes('Bold') || fontPath.includes('arialbd')) {
-          registerFont(fontPath, { family: 'PassFont', weight: 'bold' });
-        } else {
-          registerFont(fontPath, { family: 'PassFont', weight: 'normal' });
+    if (fs.existsSync(interFontPath)) {
+      // Register Inter as both normal and bold (variable font supports both)
+      registerFont(interFontPath, { family: 'Inter', weight: 'normal' });
+      registerFont(interFontPath, { family: 'Inter', weight: 'bold' });
+      console.log('Registered Inter font from:', interFontPath);
+    } else {
+      console.warn('Inter font not found at:', interFontPath);
+      
+      // Fallback to system fonts
+      const systemFonts = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        'C:\\Windows\\Fonts\\arial.ttf',
+      ];
+      
+      for (const fontPath of systemFonts) {
+        if (fs.existsSync(fontPath)) {
+          registerFont(fontPath, { family: 'Inter', weight: 'normal' });
+          registerFont(fontPath, { family: 'Inter', weight: 'bold' });
+          console.log('Registered fallback font from:', fontPath);
+          break;
         }
       }
     }
@@ -173,8 +181,8 @@ export async function generateEventPass(data: PassData): Promise<Buffer> {
   ) => {
     ctx.save();
     ctx.fillStyle = color;
-    // Use PassFont (registered) with fallbacks for different environments
-    ctx.font = `${fontWeight} ${fontSize}px "PassFont", "DejaVu Sans", "Liberation Sans", Arial, sans-serif`;
+    // Use Inter font (bundled with the project)
+    ctx.font = `${fontWeight} ${fontSize}px Inter`;
     
     if (rotation) {
       ctx.translate(x, y);
