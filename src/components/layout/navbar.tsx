@@ -46,11 +46,11 @@ const Navbar = () => {
         duration: 0.8,
         ease: 'expo.inOut',
       }, 0)
-      .to(contentRef.current, { 
-        y: 0, 
+      .to(contentRef.current, {
+        y: 0,
         opacity: 1,
-        duration: 0.7, 
-        ease: 'power3.out' 
+        duration: 0.7,
+        ease: 'power3.out'
       }, 0.2)
       .to('.menu-link-item p', {
         y: 0,
@@ -109,16 +109,16 @@ const Navbar = () => {
     setTimeout(() => {
       window.open(url, '_blank', 'noopener,noreferrer');
     }, 800);
-    }
+  }
   return (
     <nav ref={containerRef} className="main-navbar relative text-white">
       {/* Top Navigation Bar */}
-      <nav className="fixed top-0 left-0 w-screen flex justify-between items-center p-4 sm:p-6 md:p-8 z-[100] pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent mx-auto">
+      <nav className="absolute top-0 left-0 w-screen flex justify-between items-center p-4 sm:p-6 md:p-8 z-[100] pointer-events-none bg-gradient-to-b from-black/80 via-black/40 to-transparent mx-auto">
         <Link href="/" className="logo pointer-events-auto w-18 h-18 sm:w-22 sm:h-22 cursor-pointer">
           <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
         </Link>
-        
-        <div 
+
+        <div
           className="toggle-btn flex items-center gap-2 sm:gap-4 cursor-pointer pointer-events-auto"
           onClick={toggleMenu}
         >
@@ -133,7 +133,7 @@ const Navbar = () => {
       </nav>
 
       {/* Menu Overlay */}
-      <div 
+      <div
         ref={overlayRef}
         className="fixed top-0 left-0 w-full h-screen bg-[var(--color-bg-slate)] backdrop-blur-xl z-[90] overflow-hidden"
         style={{
@@ -148,7 +148,7 @@ const Navbar = () => {
               <div className="flex flex-col gap-3 sm:gap-4">
                 {['Home', 'Events', 'Sponsors'].map((link) => (
                   <div key={link} className="menu-link-item overflow-hidden">
-                    <p 
+                    <p
                       onClick={() => handleNavClick(link)}
                       className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300"
                     >
@@ -157,7 +157,7 @@ const Navbar = () => {
                   </div>
                 ))}
                 <div className="menu-link-item overflow-hidden">
-                  <p 
+                  <p
                     onClick={() => handleExternalLink('https://www.roboticsclubsrmcem.in')}
                     className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter hover:text-[var(--color-primary)] cursor-pointer transition-all duration-300"
                   >

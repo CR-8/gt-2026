@@ -51,23 +51,23 @@ function About() {
               ref={textRef}
               className="
                 text-white
-                text-left
-                text-xl
-                sm:text-2xl
-                md:text-3xl
-                lg:text-4xl
-                xl:text-5xl
+                text-justify
+                text-lg
+                sm:text-xl
+                md:text-2xl
+                lg:text-3xl
+                xl:text-4xl
                 font-poppins
                 font-semibold
                 leading-snug
                 tracking-tighter
               "
             >
-              For a decade, Gantavya has been the ultimate arena where innovation meets ambition. 
-              Born from the vision of Grobots Club at SRMCEM Lucknow, this flagship technical fest has 
-              grown into a movement — uniting thousands of engineers, creators, and 
-              dreamers who dare to build tomorrow. 
-              This year, Gantavya celebrates ten years of pushing limits, breaking barriers, 
+              For a decade, Gantavya has been the ultimate arena where innovation meets ambition.
+              Born from the vision of Robotics Club at SRMCEM Lucknow, this flagship technical fest has
+              grown into a movement — uniting thousands of engineers, creators, and
+              dreamers who dare to build tomorrow.
+              This year, Gantavya celebrates ten years of pushing limits, breaking barriers,
               and transforming ideas into reality.
             </p>
           </div>
