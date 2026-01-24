@@ -15,13 +15,13 @@ export default function Hero() {
 
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 768 || 
+      const mobile = window.innerWidth < 768 ||
         /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
         // Check for low-end device indicators
         !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
       setIsMobile(mobile);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -76,7 +76,7 @@ export default function Hero() {
 
           {/* CTA */}
           <div className="mt-6 sm:mt-8 md:mt-10 flex justify-center">
-            <button 
+            <button
               onClick={() => {
                 const eventsSection = document.getElementById('events');
                 if (eventsSection) {
@@ -95,10 +95,10 @@ export default function Hero() {
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 animate-bounce">
         <span className="text-white/50 text-xs tracking-widest uppercase font-bricolage">Scroll</span>
-        <svg 
-          className="w-5 h-5 text-white/50" 
-          fill="none" 
-          stroke="currentColor" 
+        <svg
+          className="w-5 h-5 text-white/50"
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
