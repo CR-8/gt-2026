@@ -17,13 +17,13 @@ function Grid() {
             setEvents(eventsData);
             setLoading(false);
         }
-        
+
         fetchEvents();
     }, []);
 
     // Icon mapping for different event categories
     const getIcon = (category: string) => {
-        switch(category.toLowerCase()) {
+        switch (category.toLowerCase()) {
             case 'technology':
                 return (
                     <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -46,10 +46,12 @@ function Grid() {
                 <span className='text-white flex items-center justify-center whitespace-nowrap'>What to expect</span>
             </div>
 
-            <div className="mx-4 sm:mx-6 md:mx-8 lg:mx-16 my-8 sm:my-10 md:my-12 max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
-                <span className="text-white">
-                    <span className="text-neutral-500">Our Events</span>
-                </span>
+                <div className="max-w-4xl">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter leading-tight text-justify">
+                        <span className="text-neutral-500">What to expect </span>
+                        <span className="text-white">Gantavya 2026</span>
+                    </h2>
+                </div>
             </div>
 
             {loading ? (
@@ -61,7 +63,7 @@ function Grid() {
                     {/* Cards Grid - 2 columns on large screens, 1 on small */}
                     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mx-auto'>
                         {events.map((event) => (
-                            <EventCard 
+                            <EventCard
                                 key={event.slug}
                                 category={`FOR ENTHUSIASTS`}
                                 title={event.title}

@@ -3,18 +3,21 @@
 @plugin "@tailwindcss/typography";
 
 @keyframes anniversaryPulse {
-  0%, 100% { 
-    filter: drop-shadow(0 0 25px #FF6A00); 
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 25px #FF6A00);
   }
-  50% { 
-    filter: drop-shadow(0 0 50px #FFD700); 
+
+  50% {
+    filter: drop-shadow(0 0 50px #FFD700);
   }
 }
 
 @font-face {
   font-family: 'Barbra';
   src: url('/font/barbra-font/Barbra-Regular.woff2') format('woff2'),
-       url('/font/barbra-font/Barbra-Regular.ttf') format('truetype');
+    url('/font/barbra-font/Barbra-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -23,7 +26,7 @@
 @font-face {
   font-family: 'Barbra';
   src: url('/font/barbra-font/Barbra-Italic.woff2') format('woff2'),
-       url('/font/barbra-font/Barbra-Italic.ttf') format('truetype');
+    url('/font/barbra-font/Barbra-Italic.ttf') format('truetype');
   font-weight: 400;
   font-style: italic;
   font-display: swap;
@@ -32,7 +35,7 @@
 @font-face {
   font-family: 'Barbra';
   src: url('/font/barbra-font/Barbra-High.woff2') format('woff2'),
-       url('/font/barbra-font/Barbra-High.ttf') format('truetype');
+    url('/font/barbra-font/Barbra-High.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -41,7 +44,7 @@
 @font-face {
   font-family: 'Barbra';
   src: url('/font/barbra-font/Barbra-HighItalic.woff2') format('woff2'),
-       url('/font/barbra-font/Barbra-HighItalic.ttf') format('truetype');
+    url('/font/barbra-font/Barbra-HighItalic.ttf') format('truetype');
   font-weight: 700;
   font-style: italic;
   font-display: swap;
@@ -49,7 +52,7 @@
 
 @font-face {
   font-family: 'TRON';
-  src: url('/font/TRON.ttf') format('truetype');
+  src: url('/font/Project3S.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -227,9 +230,11 @@
     scrollbar-width: none;
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   ::selection {
     background-color: var(--color-primary-orange);
     color: var(--color-bg-black);
@@ -303,17 +308,18 @@
 
 /* Mobile Performance Optimizations */
 @media (max-width: 768px) {
+
   /* Reduce animation complexity on mobile */
   .bar {
     will-change: height;
     contain: layout style paint;
   }
-  
+
   /* Optimize scroll-triggered animations */
   [data-scroll-trigger] {
     will-change: transform, opacity;
   }
-  
+
   /* Reduce motion for users who prefer it */
   @media (prefers-reduced-motion: reduce) {
     * {
