@@ -88,8 +88,8 @@ function Gallery() {
 
         <div className="max-w-4xl">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter leading-tight text-justify">
-            <span className="text-white">Moments from our </span>
-            <span className="text-neutral-500">Past Events</span>
+            <span className="text-neutral-500">Moments from our </span>
+            <span className="text-white">Past Events</span>
           </h2>
         </div>
       </div>
