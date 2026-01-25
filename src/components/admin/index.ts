@@ -9,6 +9,7 @@ export { FormSheet } from './form-sheet'
 export { StatsCard, StatsGrid } from './stats-card'
 export { DataTable, SearchFilter, FilterButton } from './data-table'
 export { StatusBadge, BooleanBadge } from './status-badge'
+export { TeamEmailStatus } from './team-email-status'
 
 // Form Components
 export { 
