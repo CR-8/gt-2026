@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       console.log(`🏁 Processing team: ${team.team_name} (${team.id})`)
       try {
         const eventName = team.events?.name || 'Gantavya Event'
-        const teamId = team.id // Use full UUID instead of truncated version
+        const teamId = team.team_code || team.id.slice(0, 8).toUpperCase()
 
         // Get team members
         const members = team.team_members || []
