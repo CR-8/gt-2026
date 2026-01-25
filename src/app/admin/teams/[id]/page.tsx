@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Phone, User, Save, Check, X, Edit2, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TeamEmailStatus } from '@/components/admin'
+import { useTeamDetails } from '@/hooks/useTeamDetails'
 
 interface TeamMember {
   id: string
@@ -41,9 +42,7 @@ interface TeamDetails {
 export default function TeamDetailsPage() {
   const params = useParams()
   const router = useRouter()
-  const [team, setTeam] = useState<TeamDetails | null>(null)
-  const [members, setMembers] = useState<TeamMember[]>([])
-  const [loading, setLoading] = useState(true)
+  const { team, members, loading, refetch } = useTeamDetails()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -58,10 +57,6 @@ export default function TeamDetailsPage() {
   })
 
   useEffect(() => {
-    fetchTeamDetails()
-  }, [params.id])
-
-  useEffect(() => {
     if (team) {
       setEditForm({
         team_name: team.team_name,
@@ -72,21 +67,6 @@ export default function TeamDetailsPage() {
       })
     }
   }, [team])
-
-  async function fetchTeamDetails() {
-    try {
-      const response = await fetch(`/api/admin/teams/${params.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setTeam(data.team)
-        setMembers(data.members)
-      }
-    } catch (error) {
-      console.error('Error fetching team details:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   async function handleSave() {
     setSaving(true)
@@ -108,7 +88,7 @@ export default function TeamDetailsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setTeam(prev => prev ? { ...prev, ...data.team } : null)
+        refetch()
         setEditing(false)
         setSaveMessage({ type: 'success', text: 'Team updated successfully!' })
         setTimeout(() => setSaveMessage(null), 3000)
@@ -139,7 +119,7 @@ export default function TeamDetailsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setTeam(prev => prev ? { ...prev, ...data.team } : null)
+        refetch()
         setEditForm(prev => ({ ...prev, has_paid: true, payment_gateway: 'upi' }))
         setSaveMessage({ type: 'success', text: 'Payment marked as complete!' })
         setTimeout(() => setSaveMessage(null), 3000)
@@ -152,10 +132,19 @@ export default function TeamDetailsPage() {
     }
   }
 
+  const formattedDate = useMemo(() => {
+    if (!team?.created_at) return ''
+    return new Date(team.created_at).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }, [team?.created_at])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" aria-label="Loading team details"></div>
       </div>
     )
   }
@@ -323,10 +312,10 @@ export default function TeamDetailsPage() {
       )}
 
       {/* Team Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" role="region" aria-labelledby="team-info">
         {/* Basic Info */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Team Information</h2>
+        <section className="bg-neutral-900 border border-neutral-800 rounded-lg p-6" aria-labelledby="basic-info">
+          <h2 id="basic-info" className="text-lg font-semibold text-white mb-4">Team Information</h2>
           <div className="space-y-3">
             <div>
               <p className="text-xs text-neutral-400 mb-1">College</p>
@@ -342,20 +331,14 @@ export default function TeamDetailsPage() {
             </div>
             <div>
               <p className="text-xs text-neutral-400 mb-1">Registered On</p>
-              <p className="text-white">
-                {new Date(team.created_at).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                })}
-              </p>
+              <p className="text-white">{formattedDate}</p>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Payment Info */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Payment Information</h2>
+        <section className="bg-neutral-900 border border-neutral-800 rounded-lg p-6" aria-labelledby="payment-info">
+          <h2 id="payment-info" className="text-lg font-semibold text-white mb-4">Payment Information</h2>
           <div className="space-y-3">
             <div>
               <p className="text-xs text-neutral-400 mb-1">Amount</p>
@@ -384,13 +367,15 @@ export default function TeamDetailsPage() {
               </div>
             )}
           </div>
+        </section>
         </div>
-      </div>
+
+      {/* Members & Email Status */}
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
       {/* Team Members */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Team Members ({members.length})</h2>
+      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Team Members ({members.length})</h2>
           <div className="space-y-3">
             {members.map((member) => (
               <div
@@ -430,11 +415,12 @@ export default function TeamDetailsPage() {
             ))}
           </div>
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Email & Pass Status</h2>
-          <TeamEmailStatus team={team} />
-        </div>
+      {/* Email Status */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Email & Pass Status</h2>
+        <TeamEmailStatus team={team}/>
       </div>
     </div>
+    </div>
   )
-}
+};

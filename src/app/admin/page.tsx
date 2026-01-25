@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Calendar, Users, DollarSign } from 'lucide-react'
 import { LoadingSpinner, StatsGrid, StatsCard } from '@/components/admin'
+import { BarChart, PieChart, LineChart } from '@/components/admin/charts'
+
+
 
 interface KPIData {
   event_kpis: any[]
@@ -119,6 +122,35 @@ export default function AdminDashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Payment Distribution */}
+        {kpis?.payment_distribution && Object.keys(kpis.payment_distribution).length > 0 && (
+          <PieChart
+            title="Payment Methods"
+            data={Object.entries(kpis.payment_distribution).map(([method, count], index) => ({
+              label: method === 'cash' ? 'Cash' : method === 'online' ? 'Online' : method.charAt(0).toUpperCase() + method.slice(1),
+              value: count as number,
+              color: ['#ff6b35', '#4ade80', '#60a5fa', '#f59e0b'][index % 4]
+            }))}
+            size={250}
+          />
+        )}
+
+        {/* Event Performance Chart */}
+        {kpis?.event_kpis && kpis.event_kpis.length > 0 && (
+          <BarChart
+            title="Teams per Event"
+            data={kpis.event_kpis.map((event: any, index: number) => ({
+              label: event.event_name.length > 15 ? event.event_name.substring(0, 15) + '...' : event.event_name,
+              value: event.total_teams,
+              color: ['#ff6b35', '#4ade80', '#60a5fa', '#f59e0b', '#8b5cf6'][index % 5]
+            }))}
+            height={250}
+          />
+        )}
       </div>
 
       {/* Quick Actions */}

@@ -111,9 +111,8 @@ export default function AdminLayout({
 
               <div className="h-6 w-px bg-neutral-700" />
 
-              {/* User Info */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-sm text-neutral-400">
+               <div className="flex items-center gap-2 text-sm text-neutral-400">
                   <User className="w-4 h-4" />
                   <span className="max-w-[150px] truncate">{user.username || user.email}</span>
                   {user.role && (

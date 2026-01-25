@@ -74,6 +74,13 @@ export default function AdminTeamsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([])
+  const [advancedFilters, setAdvancedFilters] = useState({
+    paymentStatus: [] as string[],
+    dateRange: { from: '', to: '' },
+    eventId: '',
+    collegeName: ''
+  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formData, setFormData] = useState(initialFormState)
   const [members, setMembers] = useState<TeamMemberInput[]>([])
@@ -217,17 +224,35 @@ export default function AdminTeamsPage() {
     }
   }
 
-  // Filter teams by search
+  // Filter teams by search and advanced filters
   const filteredTeams = useMemo(() => {
     return teams.filter(team => {
+      // Basic search
       const matchesSearch = search === '' || 
         team.team_name.toLowerCase().includes(search.toLowerCase()) ||
         team.captain_name.toLowerCase().includes(search.toLowerCase()) ||
         team.captain_email.toLowerCase().includes(search.toLowerCase()) ||
         team.college_name?.toLowerCase().includes(search.toLowerCase())
-      return matchesSearch
+
+      // Payment status filters
+      const matchesPaymentStatus = advancedFilters.paymentStatus.length === 0 ||
+        (advancedFilters.paymentStatus.includes('paid') && team.has_paid) ||
+        (advancedFilters.paymentStatus.includes('unpaid') && !team.has_paid)
+      // Date range filter
+      const teamDate = new Date(team.created_at)
+      const matchesDateRange = (!advancedFilters.dateRange.from || teamDate >= new Date(advancedFilters.dateRange.from)) &&
+                               (!advancedFilters.dateRange.to || teamDate <= new Date(advancedFilters.dateRange.to + 'T23:59:59'))
+
+      // Event filter
+      const matchesEvent = !advancedFilters.eventId || team.events?.id === advancedFilters.eventId
+
+      // College filter
+      const matchesCollege = !advancedFilters.collegeName || 
+        team.college_name?.toLowerCase().includes(advancedFilters.collegeName.toLowerCase())
+
+      return matchesSearch && matchesPaymentStatus && matchesDateRange && matchesEvent && matchesCollege
     })
-  }, [teams, search])
+  }, [teams, search, advancedFilters])
 
   // Reset pagination when search changes
   useEffect(() => {
@@ -238,7 +263,79 @@ export default function AdminTeamsPage() {
   const paginatedTeams = pagination.paginateData(filteredTeams)
   const totalPages = pagination.getTotalPages(filteredTeams.length)
 
-  // Export data
+  // Bulk actions
+  async function handleBulkMarkAsPaid() {
+    if (selectedTeams.length === 0) return
+
+    try {
+      const response = await fetch('/api/admin/teams/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedTeams, has_paid: true })
+      })
+
+      if (response.ok) {
+        setSelectedTeams([])
+        fetchTeams(true) // Refresh
+      }
+    } catch (error) {
+      console.error('Bulk update failed:', error)
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedTeams.length === 0) return
+
+    if (!confirm(`Are you sure you want to delete ${selectedTeams.length} teams? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/admin/teams/bulk', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedTeams })
+      })
+
+      if (response.ok) {
+        setSelectedTeams([])
+        fetchTeams(true) // Refresh
+      }
+    } catch (error) {
+      console.error('Bulk delete failed:', error)
+    }
+  }
+
+  async function handleBulkEmail() {
+    if (selectedTeams.length === 0) return
+
+    const subject = prompt('Enter email subject:')
+    const message = prompt('Enter email message:')
+
+    if (!subject || !message) return
+
+    try {
+      const response = await fetch('/api/admin/teams/bulk-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          teamIds: selectedTeams, 
+          subject, 
+          message 
+        })
+      })
+
+      if (response.ok) {
+        alert(`Email sent to ${selectedTeams.length} teams successfully!`)
+        setSelectedTeams([])
+      } else {
+        alert('Failed to send emails')
+      }
+    } catch (error) {
+      console.error('Bulk email failed:', error)
+      alert('Failed to send emails')
+    }
+  }
   const exportData = useMemo(() => {
     return filteredTeams.map(t => ({
       team_name: t.team_name,
@@ -295,7 +392,24 @@ export default function AdminTeamsPage() {
         filterOptions={filterOptions}
         filterValue={filter}
         onFilterChange={setFilter}
+        advancedFilters={advancedFilters}
+        onAdvancedFiltersChange={setAdvancedFilters}
+        events={events}
       />
+
+      {selectedTeams.length > 0 && (
+        <div className="fixed bottom-4 right-4 bg-orange-600 p-4 rounded-lg z-50 flex gap-2 flex-wrap">
+          <Button onClick={handleBulkMarkAsPaid} variant="secondary">
+            Mark {selectedTeams.length} as Paid
+          </Button>
+          <Button onClick={handleBulkEmail} variant="outline">
+            Send Email to {selectedTeams.length} Teams
+          </Button>
+          <Button onClick={handleBulkDelete} variant="destructive">
+            Delete {selectedTeams.length} Teams
+          </Button>
+        </div>
+      )}
 
       <TeamFormSheet
         isOpen={isModalOpen}

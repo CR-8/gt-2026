@@ -222,3 +222,103 @@ export async function POST(request: Request) {
     )
   }
 }
+
+// PATCH for bulk updates
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json()
+    const { ids, has_paid } = body
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: 'Team IDs are required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createServiceClient()
+
+    // Update teams
+    const { error } = await supabase
+      .from('teams')
+      .update({ has_paid })
+      .in('id', ids)
+
+    if (error) {
+      console.error('Bulk update error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update teams' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Updated ${ids.length} teams successfully`
+    })
+
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE for bulk delete
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json()
+    const { ids } = body
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: 'Team IDs are required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createServiceClient()
+
+    // Delete team members first
+    const { error: membersError } = await supabase
+      .from('team_members')
+      .delete()
+      .in('team_id', ids)
+
+    if (membersError) {
+      console.error('Error deleting members:', membersError)
+      return NextResponse.json(
+        { error: 'Failed to delete team members' },
+        { status: 500 }
+      )
+    }
+
+    // Delete teams
+    const { error } = await supabase
+      .from('teams')
+      .delete()
+      .in('id', ids)
+
+    if (error) {
+      console.error('Bulk delete error:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete teams' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Deleted ${ids.length} teams successfully`
+    })
+
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
