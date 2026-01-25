@@ -55,6 +55,7 @@ export interface Database {
           transaction_id: string | null
           account_holder_name: string | null
           passes_generated: boolean
+          team_code: string | null
           is_active: boolean
           created_at: string
           updated_at: string

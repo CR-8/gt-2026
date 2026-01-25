@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { createClient } from '@/utils/supabase/client'
 import jsQR from 'jsqr'
 
 interface ScannedData {
@@ -47,8 +46,7 @@ export default function ScanPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-
-  const supabase = createClient()
+  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Start camera
   const startCamera = async () => {
@@ -141,10 +139,12 @@ export default function ScanPage() {
     if (code) {
       try {
         const data: ScannedData = JSON.parse(code.data)
+        console.log('📱 QR code scanned, parsed data:', data)
         setScannedData(data)
         fetchTeamMember(data)
         setSuccess('QR code scanned successfully!')
       } catch (err) {
+        console.error('❌ Failed to parse QR code data:', err)
         setError('Invalid QR code data')
       }
     } else {
@@ -154,11 +154,14 @@ export default function ScanPage() {
 
   // Handle manual QR data input (for testing)
   const handleManualScan = (qrData: string) => {
+    console.log('🔧 Manual scan input:', qrData)
     try {
       const data: ScannedData = JSON.parse(qrData)
+      console.log('📝 Parsed manual data:', data)
       setScannedData(data)
       fetchTeamMember(data)
     } catch (err) {
+      console.error('❌ Failed to parse manual QR data:', err)
       setError('Invalid QR code data')
     }
   }
@@ -168,63 +171,33 @@ export default function ScanPage() {
     setLoading(true)
     setError(null)
 
+    console.log('🔍 Fetching team member with data:', data)
+    console.log('🎯 Looking for team with ID:', data.teamId)
+
     try {
-      // First, find the team by teamId (could be UUID prefix or full UUID)
-      let teamQuery = supabase
-        .from('teams')
-        .select('id')
-        .or(`id.ilike.${data.teamId}*,id.eq.${data.teamId}`)
+      const response = await fetch('/api/admin/scan/fetch-member', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teamId: data.teamId,
+          participantEmail: data.participantEmail,
+        }),
+      })
 
-      const { data: teamData, error: teamError } = await teamQuery.single()
-
-      if (teamError || !teamData) {
-        setError('Team not found. Please check the QR code.')
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Fetch member failed:', errorData.error)
+        setError(errorData.error || 'Failed to fetch team member')
         return
       }
 
-      // Now find the team member by email in this team
-      const { data: member, error } = await supabase
-        .from('team_members')
-        .select(`
-          id,
-          member_name,
-          member_email,
-          member_contact,
-          role,
-          is_present,
-          attendance_marked_at,
-          teams!inner (
-            team_name,
-            college_name,
-            events!inner (
-              name
-            )
-          )
-        `)
-        .eq('member_email', data.participantEmail)
-        .eq('team_id', teamData.id)
-        .single()
+      const { member } = await response.json()
+      console.log('✅ Found member:', member)
 
-      if (error || !member) {
-        setError('Team member not found. Please check the QR code and try again.')
-        return
-      }
-
-      const memberData = {
-        id: member.id,
-        member_name: member.member_name,
-        member_email: member.member_email,
-        member_contact: member.member_contact,
-        role: member.role,
-        is_present: member.is_present || false,
-        attendance_marked_at: member.attendance_marked_at,
-        team_name: (member.teams as any).team_name,
-        college_name: (member.teams as any).college_name,
-        event_name: (member.teams as any).events.name,
-      }
-
-      setTeamMember(memberData)
-      setIsPresent(memberData.is_present)
+      setTeamMember(member)
+      setIsPresent(member.is_present)
     } catch (err) {
       setError('Failed to fetch team member details')
       console.error('Fetch error:', err)
@@ -281,20 +254,24 @@ export default function ScanPage() {
 
   // Continuous scanning
   useEffect(() => {
-    let scanInterval: NodeJS.Timeout
-
-    if (cameraActive && !scannedData && !scanning) {
-      scanInterval = setInterval(() => {
+    if (cameraActive && !scannedData) {
+      scanIntervalRef.current = setInterval(() => {
         scanQRCode()
-      }, 1000) // Scan every second
+      }, 500) // Scan every 500ms
+    } else {
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current)
+        scanIntervalRef.current = null
+      }
     }
 
     return () => {
-      if (scanInterval) {
-        clearInterval(scanInterval)
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current)
+        scanIntervalRef.current = null
       }
     }
-  }, [cameraActive, scannedData, scanning])
+  }, [cameraActive, scannedData])
 
   // Start scanning
   const startScanning = async () => {
@@ -408,9 +385,6 @@ export default function ScanPage() {
             {/* Controls */}
             {cameraActive && (
               <div className="flex gap-2">
-                <Button onClick={() => scanQRCode()} disabled={!scanning}>
-                  Scan Now
-                </Button>
                 <Button variant="outline" onClick={stopScanning}>
                   Stop Scanning
                 </Button>
