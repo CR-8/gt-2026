@@ -38,8 +38,8 @@ export async function generatePassesForTeam(teamId: string) {
 
   // Register custom font to fix fontconfig error
   try {
-    registerFont(path.join(process.cwd(), 'BitcountSingle-Regular.ttf'), { family: 'BitcountSingle', weight: '400', style: 'normal' })
-    console.log('✅ Custom font registered: BitcountSingle-Regular.ttf')
+    registerFont(path.join(process.cwd(), 'public', 'fonts', 'BitcountSingle-Regular.ttf'), { family: 'BitcountSingle', weight: '400', style: 'normal' })
+    console.log('✅ Custom font registered: public/fonts/BitcountSingle-Regular.ttf')
   } catch (fontError) {
     console.warn('⚠️ Failed to register custom font:', fontError)
   }
