@@ -19,7 +19,7 @@ const paymentSchema = z.object({
 const registrationSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
   team_name: z.string().min(3, 'Team name must be at least 3 characters').max(50, 'Team name too long'),
-  college_name: z.string().min(2, 'College name must be at least 2 characters').max(200, 'College name too long'),
+  college_name: z.string().max(200, 'College name too long').optional(),
   captain: z.object({
     name: z.string().regex(/^[a-zA-Z\s.'-]{2,100}$/, 'Captain name must be 2-100 characters with only letters, spaces, dots, hyphens, or apostrophes'),
     email: z.string().email('Invalid captain email').max(254, 'Email too long'),
@@ -81,37 +81,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // 3. Check if captain email is already registered (global, as per DB constraint)
-    const { data: existingTeam } = await supabase
-      .from('teams')
-      .select('id')
-      .eq('captain_email', captain.email)
-      .single()
-
-    if (existingTeam) {
-      return NextResponse.json(
-        { error: 'This email is already registered as a team member and cannot participate in more than one event' },
-        { status: 400 }
-      )
-    }
-
-    // 4. Check if any member email is already registered for this event
-    if (members.length > 0) {
-      const memberEmails = members.map(m => m.member_email)
-      const { data: existingMembers } = await supabase
-        .from('team_members')
-        .select('member_email, teams!inner(event_id)')
-        .in('member_email', memberEmails)
-        .eq('teams.event_id', event_id)
-
-      if (existingMembers && existingMembers.length > 0) {
-        const duplicateEmail = existingMembers[0].member_email
-        return NextResponse.json(
-          { error: `Email ${duplicateEmail} is already registered for this event` },
-          { status: 400 }
-        )
-      }
-    }
+    // 3. No duplicate email checks - allow multiple registrations per email
 
     // 5. Calculate total amount from event's entry_fee
     const registrationFee = event.entry_fee || 0
@@ -153,7 +123,7 @@ export async function POST(request: Request) {
         id: teamId,
         event_id,
         team_name,
-        college_name,
+        college_name: college_name || null,
         captain_name: captain.name,
         captain_email: captain.email,
         total_amount_payable: registrationFee,

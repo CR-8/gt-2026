@@ -200,9 +200,9 @@ export function RegistrationForm({
       setSubmitMessage('Please enter a valid 10-digit phone number starting with 6-9');
       return false;
     }
-    if (!trimmedCollege || trimmedCollege.length < 2 || trimmedCollege.length > 200) {
+    if (trimmedCollege && (trimmedCollege.length < 2 || trimmedCollege.length > 200)) {
       setSubmitStatus('error');
-      setSubmitMessage('College name is required (2-200 characters)');
+      setSubmitMessage('College name must be 2-200 characters');
       return false;
     }
     return true;
@@ -241,13 +241,6 @@ export function RegistrationForm({
     }
     
     const validMembers = members.filter(m => m.email);
-    const emails = [formData.leaderEmail.toLowerCase(), ...validMembers.map(m => m.email.toLowerCase())];
-    const uniqueEmails = new Set(emails);
-    if (uniqueEmails.size !== emails.length) {
-      setSubmitStatus('error');
-      setSubmitMessage('Each team member must have a unique email address');
-      return false;
-    }
 
     const phones = [formData.leaderPhone, ...validMembers.map(m => m.phone)];
     const uniquePhones = new Set(phones);
@@ -603,14 +596,14 @@ export function RegistrationForm({
 
                       <div className="space-y-2">
                         <Label htmlFor="college" className="text-sm font-medium text-white">
-                          College/Institution <span className="text-red-500">*</span>
+                          College/Institution
                         </Label>
                         <Input
                           id="college"
                           name="college"
                           value={formData.college}
                           onChange={handleChange}
-                          placeholder="Your college name"
+                          placeholder="Your college name (optional)"
                           className="bg-neutral-800 border-neutral-700 text-white"
                           maxLength={200}
                         />

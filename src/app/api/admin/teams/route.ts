@@ -123,20 +123,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if captain email is already registered for this event
-    const { data: existingTeam } = await supabase
-      .from('teams')
-      .select('id')
-      .eq('captain_email', captain_email)
-      .eq('event_id', event_id)
-      .single()
-
-    if (existingTeam) {
-      return NextResponse.json(
-        { error: 'This email is already registered for this event' },
-        { status: 400 }
-      )
-    }
+    // No duplicate email checks - allow multiple registrations per email
 
     // Create team
     const { data: team, error: teamError } = await supabase
