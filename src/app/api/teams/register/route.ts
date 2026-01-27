@@ -116,13 +116,41 @@ export async function POST(request: Request) {
     // 5. Calculate total amount from event's entry_fee
     const registrationFee = event.entry_fee || 0
 
+    // Generate unique team ID
+    let teamId: string
+    let attempts = 0
+    let data = null
+    do {
+      const randomDigits = Math.floor(1000 + Math.random() * 9000) // Generates 1000-9999
+      teamId = `GT-2026-${randomDigits}`
+      attempts++
+      if (attempts > 10) {
+        console.log('Failed to generate unique team ID after 10 attempts')
+        return NextResponse.json(
+          { error: 'Failed to generate unique team ID. Please try again.' },
+          { status: 500 }
+        )
+      }
+      // Check if ID already exists
+      const res = await supabase
+        .from('teams')
+        .select('id')
+        .eq('id', teamId)
+        .maybeSingle()
+      data = res.data
+    } while (data)  // Loop if data exists (ID is taken)
+
+    console.log('Generated team ID:', teamId)
+
     // === BEGIN TRANSACTION-LIKE OPERATIONS ===
     // All operations below must succeed, or we rollback
 
     // 6. Insert team with payment details
+    console.log('About to insert team with ID:', teamId)
     const { data: team, error: teamError } = await supabase
       .from('teams')
       .insert({
+        id: teamId,
         event_id,
         team_name,
         college_name,
@@ -130,7 +158,7 @@ export async function POST(request: Request) {
         captain_email: captain.email,
         total_amount_payable: registrationFee,
         currency: 'INR',
-        has_paid: registrationFee === 0, // Only mark paid if free event
+        has_paid: registrationFee === 0,
         payment_gateway: payment ? 'upi' : (registrationFee === 0 ? 'free' : 'pending'),
         payment_status: payment ? 'pending_verification' : (registrationFee === 0 ? 'completed' : 'not_required'),
         transaction_id: payment?.transaction_id || null,
@@ -141,6 +169,7 @@ export async function POST(request: Request) {
       .single()
 
     if (teamError || !team) {
+      console.log('Team insert failed:', teamError)
       return NextResponse.json(
         { error: 'Failed to create team registration' },
         { status: 500 }
@@ -148,8 +177,10 @@ export async function POST(request: Request) {
     }
 
     createdTeamId = team.id
+    console.log('Team created successfully:', team.id)
 
     // 7. Insert captain as team member
+    console.log('Inserting captain')
     const { error: captainError } = await supabase
       .from('team_members')
       .insert({
@@ -162,6 +193,7 @@ export async function POST(request: Request) {
       })
 
     if (captainError) {
+      console.log('Captain insert failed:', captainError)
       // Rollback: delete team
       await supabase.from('teams').delete().eq('id', team.id)
       createdTeamId = null
@@ -171,8 +203,11 @@ export async function POST(request: Request) {
       )
     }
 
+    console.log('Captain inserted successfully')
+
     // 8. Insert other members if provided
     if (members.length > 0) {
+      console.log('Inserting members:', members.length)
       const teamMembers = members.map(member => ({
         team_id: team.id,
         ...member,
@@ -185,6 +220,7 @@ export async function POST(request: Request) {
         .insert(teamMembers)
 
       if (membersError) {
+        console.log('Members insert failed:', membersError)
         // Rollback: delete team members and team
         await supabase.from('team_members').delete().eq('team_id', team.id)
         await supabase.from('teams').delete().eq('id', team.id)
@@ -194,21 +230,23 @@ export async function POST(request: Request) {
           { status: 500 }
         )
       }
+      console.log('Members inserted successfully')
     }
 
     // === END TRANSACTION-LIKE OPERATIONS ===
 
     // 9. Send registration received email (payment pending verification)
     if (payment) {
+      console.log('Sending email for payment verification')
       try {
-        const teamId = team.team_code || team.id.slice(0, 8).toUpperCase()
-        const totalMembers = 1 + members.length // captain + members
+        const teamIdForEmail = team.id  // Use full team ID directly
+        const totalMembers = 1 + members.length
 
         const emailHtml = getRegistrationReceivedEmail({
           teamName: team_name,
           captainName: captain.name,
           eventName: event.name || 'Gantavya Event',
-          teamId: teamId,
+          teamId: teamIdForEmail,
           collegeName: college_name,
           memberCount: totalMembers,
           transactionId: payment.transaction_id,
@@ -222,13 +260,16 @@ export async function POST(request: Request) {
         })
 
         if (!emailResult.success) {
-          // Don't fail registration if email fails - team is already created
+          console.log('Email send failed, but continuing')
+        } else {
+          console.log('Email sent successfully')
         }
-      } catch {
-        // Don't fail the registration if email fails
+      } catch (emailError) {
+        console.log('Email error:', emailError)
       }
     }
 
+    console.log('Registration successful for team:', team.id)
     return NextResponse.json({
       success: true,
       team_id: team.id,
@@ -239,14 +280,15 @@ export async function POST(request: Request) {
         : 'Team registered successfully!',
     }, { status: 201 })
 
-  } catch {
+  } catch (error) {
+    console.log('Unexpected error:', error)
     // Attempt rollback if team was created
     if (createdTeamId) {
       try {
         await supabase.from('team_members').delete().eq('team_id', createdTeamId)
         await supabase.from('teams').delete().eq('id', createdTeamId)
-      } catch {
-        // Rollback failed
+      } catch (rollbackError) {
+        console.log('Rollback failed:', rollbackError)
       }
     }
     

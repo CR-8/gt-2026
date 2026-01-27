@@ -9,11 +9,15 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔄 GET /api/admin/teams/[id] - Starting request')
   try {
     const { id } = await params
+    console.log(`📝 Extracted team ID: ${id}`)
     const supabase = createServiceClient()
+    console.log('🔗 Created Supabase service client')
 
     // Fetch team with event details
+    console.log('🔍 Fetching team with event details...')
     const { data: team, error: teamError } = await supabase
       .from('teams')
       .select(`
@@ -29,13 +33,17 @@ export async function GET(
       .single()
 
     if (teamError || !team) {
+      console.log('❌ Team fetch error:', teamError)
+      console.log('❌ Team data:', team)
       return NextResponse.json(
         { error: 'Team not found' },
         { status: 404 }
       )
     }
+    console.log('✅ Team fetched successfully:', team)
 
     // Fetch team members
+    console.log('👥 Fetching team members...')
     const { data: members, error: membersError } = await supabase
       .from('team_members')
       .select('*')
@@ -43,14 +51,19 @@ export async function GET(
       .order('role', { ascending: false }) // Captain first
 
     if (membersError) {
-      // Members fetch failed
+      console.log('⚠️ Members fetch error:', membersError)
+      console.log('⚠️ Members data:', members)
+    } else {
+      console.log('✅ Members fetched successfully:', members)
     }
 
+    console.log('🎉 GET request completed successfully')
     return NextResponse.json({
       team,
       members: members || []
     })
-  } catch {
+  } catch (error) {
+    console.error('💥 GET request failed with error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -63,12 +76,23 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔄 PATCH /api/admin/teams/[id] - Starting request')
   try {
     const { id } = await params
+    console.log(`📝 Extracted team ID: ${id}`)
     const supabase = createServiceClient()
+    console.log('🔗 Created Supabase service client')
     const body = await request.json()
+    console.log('📦 Parsed request body:', body)
+
+    // Normalize payment_status: 'captured' should be treated as 'completed'
+    if (body.payment_status === 'captured') {
+      body.payment_status = 'completed'
+      console.log('🔄 Normalized payment_status from "captured" to "completed"')
+    }
 
     // Get the current team state before update
+    console.log('🔍 Fetching current team state...')
     const { data: currentTeam, error: fetchError } = await supabase
       .from('teams')
       .select(`
@@ -84,25 +108,30 @@ export async function PATCH(
       .single()
 
     if (fetchError || !currentTeam) {
+      console.log('❌ Team fetch error:', fetchError)
+      console.log('❌ Current team data:', currentTeam)
       return NextResponse.json(
         { error: 'Team not found' },
         { status: 404 }
       )
     }
+    console.log('✅ Current team fetched successfully:', currentTeam)
 
     const wasUnpaid = !currentTeam.has_paid
     const isBeingVerified = body.has_paid === true && (
       body.payment_status === 'completed' || 
-      body.payment_status === 'captured' ||
       currentTeam.payment_status === 'pending_verification'
     )
+    console.log(`💰 Payment status check - wasUnpaid: ${wasUnpaid}, isBeingVerified: ${isBeingVerified}`)
 
     // If payment is being verified, set passes_generated to false for later processing
     if (wasUnpaid && isBeingVerified) {
       body.passes_generated = false
+      console.log('🔄 Set passes_generated to false for payment verification')
     }
 
     // Update the team
+    console.log('📝 Updating team in database...')
     const { data: team, error } = await supabase
       .from('teams')
       .update(body)
@@ -111,11 +140,13 @@ export async function PATCH(
       .single()
 
     if (error) {
+      console.log('❌ Team update error:', error)
       return NextResponse.json(
         { error: 'Failed to update team', details: error.message },
         { status: 500 }
       )
     }
+    console.log('✅ Team updated successfully:', team)
 
     // Trigger pass generation immediately after payment verification
     if (wasUnpaid && isBeingVerified) {
@@ -129,11 +160,13 @@ export async function PATCH(
       }
     }
 
+    console.log('🎉 PATCH request completed successfully')
     return NextResponse.json({ 
       team,
       passesTriggered: wasUnpaid && isBeingVerified
     })
-  } catch {
+  } catch (error) {
+    console.error('💥 PATCH request failed with error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

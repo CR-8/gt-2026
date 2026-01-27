@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       console.log(`🏁 Processing team: ${team.team_name} (${team.id})`)
       try {
         const eventName = team.events?.name || 'Gantavya Event'
-        const teamId = team.team_code || team.id.slice(0, 8).toUpperCase()
+        const teamId = team.team_code || team.id
 
         // Get team members (includes captain and all members)
         const members = team.team_members || []

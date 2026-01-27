@@ -45,7 +45,7 @@ export async function generatePassesForTeam(teamId: string) {
         .slice(0, 20)
 
       const passBuffer = await generateEventPass({
-        teamId: team.team_code || team.id.slice(0, 8).toUpperCase(),
+        teamId: team.team_code || team.id,
         teamName: team.team_name,
         eventName: team.events?.name || 'Gantavya Event',
         collegeName: team.college_name || 'N/A',
@@ -115,7 +115,7 @@ export async function generatePassesForTeam(teamId: string) {
     teamName: team.team_name,
     captainName: team.captain_name,
     eventName: team.events?.name || 'Gantavya Event',
-    teamId: team.team_code || team.id.slice(0, 8).toUpperCase(),
+    teamId: team.team_code || team.id,
     collegeName: team.college_name,
     memberCount: team.team_members.length,
     transactionId: team.transaction_id,
