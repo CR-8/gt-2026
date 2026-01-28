@@ -13,11 +13,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find the team by team_code
+    // Find the team by id
     const { data: teamData, error: teamError } = await supabase
       .from('teams')
       .select('id')
-      .eq('team_code', teamId)
+      .eq('id', teamId)
       .single()
 
     if (teamError || !teamData) {
