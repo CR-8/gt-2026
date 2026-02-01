@@ -193,6 +193,8 @@ export default function ScanPage() {
         return
       }
 
+
+      
       const { member } = await response.json()
       console.log('✅ Found member:', member)
 
